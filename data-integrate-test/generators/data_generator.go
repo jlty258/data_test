@@ -20,11 +20,22 @@ type DataGenerator struct {
 }
 
 func NewDataGenerator(db *sql.DB, schema *SchemaDefinition, mapper *DatabaseTypeMapper) *DataGenerator {
+	// MySQL 的 prepared statement 最多支持 65535 个占位符
+	// 假设每个字段一个占位符，批次大小 = 65535 / 字段数
+	// 为了安全，设置为 1000 条一批（假设最多 16 个字段）
+	batchSize := int64(1000)
+	if len(schema.Fields) > 0 {
+		maxBatch := 65535 / int64(len(schema.Fields))
+		if maxBatch < batchSize {
+			batchSize = maxBatch
+		}
+	}
+	
 	return &DataGenerator{
 		db:        db,
 		schema:    schema,
 		mapper:    mapper,
-		batchSize: 10000, // 默认1万条一批
+		batchSize: batchSize,
 	}
 }
 
@@ -87,7 +98,7 @@ func (g *DataGenerator) insertBatch(ctx context.Context, batchIdx int64) error {
 
 	// 生成批次数据
 	values := make([]string, 0, endID-startID)
-	args := make([]interface{}, 0, (endID-startID)*len(g.schema.Fields))
+	args := make([]interface{}, 0, int(endID-startID)*len(g.schema.Fields))
 
 	for id := startID; id < endID; id++ {
 		rowValues := g.generateRow(id)

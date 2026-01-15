@@ -19,7 +19,7 @@ func main() {
 	var (
 		templatePath = flag.String("template", "", "测试模板路径（必需）")
 		configPath   = flag.String("config", "config/test_config.yaml", "配置文件路径")
-		parallel     = flag.Int("parallel", 1, "并发数")
+		_            = flag.Int("parallel", 1, "并发数") // TODO: 实现并发测试
 	)
 	flag.Parse()
 
@@ -90,7 +90,7 @@ func main() {
 
 	fmt.Printf("开始执行测试: %s\n", template.Name)
 	fmt.Printf("命名空间: %s\n", executor.Namespace)
-	
+
 	result, err := executor.Execute(ctx)
 	if err != nil {
 		log.Fatalf("测试执行失败: %v", err)
@@ -115,7 +115,7 @@ func printResults(result *testcases.TestResult) {
 	fmt.Printf("开始时间: %s\n", result.StartTime.Format("2006-01-02 15:04:05"))
 	fmt.Printf("结束时间: %s\n", result.EndTime.Format("2006-01-02 15:04:05"))
 	fmt.Printf("\n测试详情:\n")
-	
+
 	for i, tr := range result.TestResults {
 		fmt.Printf("\n  [%d] %s\n", i+1, tr.TestType)
 		if tr.Error != "" {
@@ -137,4 +137,3 @@ func printResults(result *testcases.TestResult) {
 	}
 	fmt.Printf("\n==============================\n")
 }
-

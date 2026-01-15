@@ -13,7 +13,7 @@ mock_services:
 databases:
   - name: "mysql_test"
     type: "mysql"
-    host: "localhost"
+    host: "mysql-test"  # 使用容器名，如果在本地运行改为 localhost
     port: 3306
     user: "root"
     password: "password"
