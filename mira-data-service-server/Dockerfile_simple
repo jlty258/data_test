@@ -1,0 +1,15 @@
+FROM ubuntu:24.10
+
+# 更新软件包并安装 tzdata
+RUN apt-get update && \
+    apt-get install -y tzdata && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+# 设置时区
+ENV TZ=Asia/Shanghai
+
+WORKDIR /home/workspace
+# 从builder阶段复制二进制文件和调试工具到最终镜像
+COPY --from=builder /home/workspace/dataserver /home/workspace/bin/
+
+CMD ["/home/workspace/bin/dataserver", "-config", "/home/workspace/config/config.yaml"]
