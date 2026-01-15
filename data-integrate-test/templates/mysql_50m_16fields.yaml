@@ -1,0 +1,21 @@
+name: "mysql_50m_16fields"
+description: "MySQL 50M行 16字段测试"
+
+database:
+  type: "mysql"
+  name: "mysql_test"
+
+schema:
+  field_count: 16
+  field_types: ["int", "varchar", "text", "decimal", "datetime", "blob"]
+  max_field_size: 1024
+
+data:
+  row_count: 50000000
+  use_snapshot: true
+
+tests:
+  - type: "read"
+    expected: 50000000
+    tolerance: 0.1
+

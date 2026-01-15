@@ -1,0 +1,732 @@
+syntax = "proto3";
+
+package datasource;
+
+import "proto/google/api/annotations.proto";
+
+option go_package= "./datasource";
+
+// 数据源服务，提供连接和数据读取功能
+service DataSourceService {
+  // 批处理读取数据
+  rpc SubmitBatchJob (BatchReadRequest) returns (BatchResponse);
+  // 流式读取数据，使用流式响应来返回数据
+  rpc ReadStreamingData(StreamReadRequest) returns (stream ArrowResponse);
+  // 从客户端发送arrow数据到服务端
+  rpc SendArrowData(stream WrappedWriterDataRequest) returns (Response);
+  // 写入OSS数据
+  rpc WriteOSSData(stream OSSWriteRequest) returns (Response);
+  // 写入OSS文件数据
+  rpc WriteOSSFileData(stream OSSWriteRequest) returns (Response);
+  // 读OSS数据
+  rpc ReadOSSData(OSSReadRequest) returns (stream OSSReadResponse);
+  // 往内置数据库写入数据
+  rpc WriteInternalData(stream WriterInternalDataRequest) returns (Response);
+  // 从内置数据库读取数据
+  rpc ReadInternalData(InternalReadRequest) returns (stream ArrowResponse);
+  // 向数据源中写入数据
+  rpc WriterExternalData(WriterExternalDataRequest) returns (Response);
+  // 获取数据源表信息
+  rpc GetTableInfo(TableInfoRequest) returns (TableInfoResponse);
+  // 获取聚合数据量信息
+  rpc GetGroupCountInfo(GroupCountRequest) returns (GroupCountResponse);
+  // 查询作业状态
+  rpc GetJobStatus(JobStatusRequest) returns (BatchResponse);
+  // 清空表数据
+  rpc TruncateTable(TruncateTableRequest) returns (TruncateTableResponse);
+  // 推送任务结果到外部数据库
+  rpc PushJobResultToExternalDB(PushJobResultRequest) returns (PushJobResultResponse);
+  // 执行doris sql语句
+  rpc ExecuteDorisSQL(ExecuteDorisSQLRequest) returns (ExecuteDorisSQLResponse);
+  // 执行创建外部资源、外部表、内部表并导入数据
+  rpc CreateExternalAndInternalTableAndImportData(CreateExternalAndInternalTableAndImportDataRequest) returns (CreateExternalAndInternalTableAndImportDataResponse);
+  // 往doris导入csv文件
+  rpc ImportCsvFileToDoris(ImportCsvFileToDorisRequest) returns (Response);
+  // 从doris导出csv文件
+  rpc ExportCsvFileFromDoris(ExportCsvFileFromDorisRequest) returns (ExportCsvFileFromDorisResponse);
+  // 导出doris数据到mira数据库
+  rpc ExportDorisDataToMiraDB(ExportDorisDataToMiraDBRequest) returns (Response);
+  // 从mira数据库导入到doris
+  rpc ImportMiraDBDataToDoris(ImportMiraDBDataToDorisRequest) returns (ImportMiraDBDataToDorisResponse);
+  // 获取内置数据库表信息
+  rpc GetInternalTableInfo(InternalTableInfoRequest) returns (TableInfoResponse);
+  // 读取数据源流式数据
+  rpc ReadDataSourceStreaming(ReadDataSourceStreamingRequest) returns (stream ArrowResponse);
+  // 清理任务存放在doris的中间数据
+  rpc CleanTmpData(CleanTmpDataRequest) returns (Response) {
+    option (google.api.http) = {
+      post: "/v1/datasource/cleanTmpData"
+      body: "*"
+    };
+  };
+  // 获取待重试清理任务列表
+  rpc GetRetryCleanupTask(GetRetryCleanupTasksRequest) returns (GetRetryCleanupTasksResponse) {
+    option (google.api.http) = {
+      post: "/v1/datasource/getRetryCleanupTask"
+      body: "*"
+    };
+  };
+
+  // ========================
+  // 新版通用接口
+  // ========================
+
+  // 执行SQL
+  rpc ExecuteSql(ExecuteSqlRequest) returns (stream ExecuteSqlResponse);
+  // 读接口（返回流式数据）
+  rpc Read(ReadRequest) returns (stream ArrowResponse);
+  // 写接口
+  rpc Write(stream WriteRequest) returns (WriteResponse);
+  // 导入数据
+  rpc ImportData(ImportDataRequest) returns (ImportDataResponse);
+}
+
+
+// 连接响应，返回连接成功与否的信息
+message Response {
+  bool success = 1;    // 是否成功连接
+  string message = 2;  // 错误或成功信息
+}
+
+message BatchResponse {
+  JobStatus status = 1;     // 作业状态：success/error
+  string mode = 2;          // 操作模式
+  string data = 3;  // 动态数据字段
+  string error = 4;         // 错误信息
+  string jobId = 5;       // pod名称
+}
+
+message JobStatusRequest {
+    string jobId = 1;  // 作业ID
+}
+
+message ArrowResponse {
+  bytes arrow_batch = 1;
+}
+
+message WriterDataRequest {
+  bytes arrow_batch = 1;
+  string assetName = 2; // 资产名称
+  string chainInfoId = 3;
+}
+
+message WrappedWriterDataRequest {
+  WriterDataRequest request = 1;
+  string requestId = 2;
+}
+
+message WriterInternalDataRequest {
+  bytes arrow_batch = 1;
+  string dbName = 2;
+  string tableName = 3;
+  string jobInstanceId = 4;
+}
+
+message WriterExternalDataRequest {
+  bytes arrow_batch = 1;
+  string assetName = 2;
+  string chainInfoId = 3;
+  string requestId = 4;
+  string tableName = 5;
+  string alias = 6;
+}
+
+message InternalReadRequest {
+  string tableName = 1;
+  repeated string dbFields = 2;
+  string dbName = 3;
+  repeated string filterNames = 4; // 过滤字段
+  repeated FilterValue filterValues = 5; // 过滤字段值
+  repeated SortRule sortRules = 6; // 排序规则
+  repeated FilterOperator filterOperators = 7; // 过滤操作符
+  string jobInstanceId = 8; // 作业实例ID
+}
+
+// 批处理请求，包含查询条件或读取参数
+message BatchReadRequest {
+  // 公共字段
+  string requestId = 1;
+  SparkConfig sparkConfig = 2;
+  
+  // 数据源标识（二选一）
+  oneof data_source {
+    ExternalDataSource external = 3;  // 外部数据源
+    InternalDataSource internal = 4;  // 内部数据源
+  }
+  
+  // 根据操作模式使用不同的参数
+  oneof operation {
+    QueryOperation query = 10;
+    WriteOperation write = 11;
+    SortOperation sort = 12;
+    CountOperation count = 13;
+    GroupByCountOperation groupby_count = 14;
+    JoinOperation join = 15;
+    AddHashColumnOperation add_hash_column = 16;
+    PSIJoinOperation psi_join = 17;
+  }
+}
+
+// 外部数据源标识
+message ExternalDataSource {
+  string assetName = 1;    // 资产名称
+  string chainInfoId = 2;   // 链信息ID
+  string alias = 3; // 链账户别名
+}
+
+// 内部数据源标识
+message InternalDataSource {
+  string tableName = 1;    // 表名
+  string dbName = 2;       // 数据库名（可选）
+}
+
+// doris数据源标识
+message DorisDataSource {
+  string tableName = 1;    // 表名
+  string dbName = 2;       // 数据库名（可选）
+}
+
+message QueryOperation {
+  repeated string dbFields = 1;
+  string dataObject = 2;
+  repeated string filterNames = 3;
+  repeated FilterValue filterValues = 4;
+  repeated FilterOperator filterOperators = 5;
+  repeated SortRule sortRules = 6;
+  string tableName = 7;
+  string jobInstanceId = 8; // 作业实例ID
+}
+
+message WriteOperation {
+  string dataObject = 1;
+  string targetTable = 2;
+}
+
+message SortOperation {
+  string dataObject = 1;
+  string orderByColumn = 2;
+  string targetTable = 3;
+}
+
+message CountOperation {
+  string tableName = 1;
+  repeated string filterNames = 2;
+  repeated FilterValue filterValues = 3;
+  repeated FilterOperator filterOperators = 4;
+}
+
+message GroupByCountOperation {
+  string tableName = 1;
+  repeated string filterNames = 2;
+  repeated FilterValue filterValues = 3;
+  repeated FilterOperator filterOperators = 4;
+  repeated string groupByFields = 5;
+}
+
+message JoinOperation {
+  repeated string joinColumns = 1;
+  JoinType joinType = 2;
+  string tempTable = 3;
+  string dataObject = 4;
+  string jobInstanceId = 5; // 作业实例ID
+}
+
+message AddHashColumnOperation {
+  string tempTable = 1; // 临时表
+  repeated string joinColumns = 2; // join字段
+  string jobInstanceId = 3; // 作业实例ID
+  repeated string columns = 4; // 列名
+}
+
+message PSIJoinOperation {
+  repeated string inObjects = 1; // 输入minio数据文件
+  repeated string joinColumns = 2; // join字段
+  string targetTable = 3; // 目标表
+  string orderByColumn = 4; // 排序字段
+  string tempTable = 5; // 临时表
+  string dataObject = 6; // join数据文件
+  string jobInstanceId = 7; // 作业实例ID
+}
+
+// 流式任务请求
+message StreamReadRequest {
+  string assetName = 1; // 资产名称
+  string chainInfoId = 2;
+  repeated string dbFields = 3;  // 数据库字段名的字符串数组
+  string requestId = 4;
+  FileType fileType = 5;
+  string filePath = 6;
+  repeated string filterNames = 7; // 过滤字段
+  repeated FilterValue filterValues = 8; // 过滤字段值
+  repeated SortRule sortRules = 9; // 排序规则
+  repeated FilterOperator filterOperators = 10; // 过滤操作符
+  string alias = 11; // 链账户别名
+}
+
+message FilterValue {
+  string str_value = 1;  // 字符串类型（单个值）
+  int32 int_value = 2;   // 整型类型（单个值）
+  double float_value = 3; // 浮动类型（单个值）
+  bool bool_value = 4;   // 布尔类型（单个值）
+  repeated string str_values = 5;  // 字符串数组（支持 IN 操作）
+  repeated int32 int_values = 6;   // 整型数组（支持 IN 操作）
+  repeated double float_values = 7; // 浮动数组（支持 IN 操作）
+  repeated bool bool_values = 8;   // 布尔数组（支持 IN 操作）
+}
+
+enum SortOrder {
+  ASC = 0; // 升序
+  DESC = 1; // 降序
+}
+
+message SortRule {
+  string fieldName = 1; // 排序字段名
+  SortOrder sortOrder = 2; // 排序方向
+}
+
+// FilterOperator 枚举类型
+enum FilterOperator {
+  EQUAL = 0;           // "="
+  NOT_EQUAL = 1;       // "!=" or "<>"
+  GREATER_THAN = 2;    // ">"
+  LESS_THAN = 3;       // "<"
+  GREATER_THAN_OR_EQUAL = 4; // ">="
+  LESS_THAN_OR_EQUAL = 5;    // "<="
+  LIKE_OPERATOR = 6;   // "LIKE"
+  IN_OPERATOR = 7;     // "IN"
+}
+
+message ConnectionInfo {
+  int32 dbtype = 1; //数据库类型
+  string host = 2; // 数据库地址
+  int32  port = 3; // 数据库端口
+  string tableName = 4; // 表名
+  DatasourceTlsConfig tlsConfig = 5; // TLS配置
+  string user = 8;
+  string password = 9;
+  string dbName = 10;
+  repeated ColumnItem columns = 11;
+}
+
+message ColumnItem {
+  string name = 1; // 字段名称
+  string data_type = 2; // 字段类型
+}
+
+
+message ServerInfo {
+  string namespace = 1;
+  string serviceName = 2;
+  string servicePort = 3;
+}
+
+// 文件类型的枚举定义
+enum FileType {
+  FILE_TYPE_UNKNOWN = 0;  // 默认值，表示未知类型
+  FILE_TYPE_CSV = 1;      // CSV 文件
+  FILE_TYPE_JSON = 2;     // JSON 文件
+  FILE_TYPE_PARQUET = 3;  // Parquet 文件
+  FILE_TYPE_AVRO = 4;     // Avro 文件
+  FILE_TYPE_ARROW = 5;  // arrow文件
+  STREAM_ARROW = 6; // arrow字节流
+}
+
+// 数据源类型
+enum DataSourceType {
+  DATA_SOURCE_TYPE_UNKNOWN = 0;
+  DATA_SOURCE_TYPE_MYSQL = 1;
+  DATA_SOURCE_TYPE_KINGBASE = 2;
+  DATA_SOURCE_TYPE_HIVE = 3;
+  DATA_SOURCE_TYPE_TIDB = 4;
+  DATA_SOURCE_TYPE_TDSQL = 5;
+  DATA_SOURCE_TYPE_VASTBASE = 6;
+  DATA_SOURCE_TYPE_GBASE = 7;
+  DATA_SOURCE_TYPE_DORIS = 8;
+}
+
+message OSSWriteRequest {
+  string bucketName = 1;  // 存储桶名称
+  string objectName = 2; // 对象名称（文件名）
+  bytes chunk = 3;       // 文件内容块
+}
+
+message OSSReadRequest {
+  string bucketName = 1;
+  string objectName = 2;
+}
+
+message OSSReadResponse {
+  bool success = 1;
+  string message = 2;
+  bytes chunk = 3;
+}
+
+message SparkDBConnInfo {
+  string dbType = 1;
+  string host = 2;
+  int32 port = 3;
+  string database = 4;
+  string username = 5;
+  string password = 6;
+  string query = 7; // 执行的查询语句
+  string dataObject = 8; // 存放的数据文件
+  repeated string inColumns = 9; // IN字段
+  repeated string inObjects = 10; // IN数据文件
+  string bucketName = 11;
+  repeated string dbFields = 12; // 数据库字段
+  repeated string joinColumns = 13; // join字段
+  OperationMode mode = 14; // 执行的spark功能函数
+  JoinType joinType = 15;
+  string  tempTable = 16; // 存储的中间表   
+  string orderByColumn = 17; // 排序字段
+  string targetTable = 18; // 目标表
+  StorageType storageType = 19; // 存储类型
+  repeated SortRule sortRules = 20; // 排序规则
+}
+
+message SparkConfig {
+  bool dynamicAllocationEnabled = 1;  // 启用动态分配
+  int32 dynamicAllocationMinExecutors = 2; // 执行器最小数量
+  int32 dynamicAllocationMaxExecutors = 3; // 执行器最大数量
+  int32 executorMemoryMB = 4;
+  int32 executorCores = 5;
+  int32 driverMemoryMB = 6;
+  int32 driverCores = 7;
+  int32 parallelism = 8; // 并行度
+  int32 numPartitions = 9; // 分区数量
+}
+
+message TableInfoRequest {
+  string assetName = 1;
+  string chainInfoId = 2;
+  string requestId = 3;
+  bool isExactQuery = 4;
+  string alias = 5;
+}
+
+message TableInfoResponse {
+  string tableName = 1;
+  int32 recordCount = 2; // 表数据条数
+  int64 recordSize = 3; // 表数据大小（字节）
+  repeated ColumnItem columns = 4; // 表结构信息
+}
+
+message GroupCountRequest {
+  string tableName = 1;
+  repeated string filterNames = 2; // 过滤字段
+  repeated FilterValue filterValues = 3; // 过滤字段值
+  repeated string groupByFields = 4;
+  string dbName = 5;
+  repeated FilterOperator filterOperators = 6; // 过滤操作符
+}
+
+message GroupCountResponse {
+  string tableName = 1;
+  int64 recordCount = 2;
+}
+
+message TruncateTableRequest {
+  string tableName = 1;
+}
+
+message TruncateTableResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+// 推送任务结果请求
+message PushJobResultRequest {
+  string jobInstanceId = 1;  // 作业实例ID
+  string chainInfoId = 2;
+  string partyId = 3;
+  string dataId = 4;
+  bool isEncrypted = 5;
+  string pubKey = 6;
+}
+
+message PushJobResultResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message JobResultExternalDBInfo {
+  int32 resultStorageType = 1;
+  string host = 2;
+  int32 port = 3;
+  string DB = 4;
+  string user = 5;
+  string password = 6;
+}
+
+message DatasourceTlsConfig {
+  // 是否开启 tls，1-不开启，2-开启
+  int32 useTls = 1;
+  // tls 模式，1-Require，2-Verify CA，3-Full Verification
+  int32 mode = 2;
+  // tls CA 证书 base64 内容
+  string caCert = 3;
+  // tls CA 证书文件名
+  string caCertFilename = 4;
+  // 服务器主机名
+  string serverName = 5;
+  // tls 客户端证书 base64 内容
+  string clientCert = 6;
+  // tls 客户端证书文件名
+  string clientCertFilename = 7;
+  // tls 客户端私钥 base64 内容
+  string clientKey = 8;
+  // tls 客户端私钥文件名
+  string clientKeyFilename = 9;
+}
+
+message ExecuteDorisSQLRequest {
+  string sql = 4; // 要执行的Doris SQL语句
+  repeated string args = 5; // SQL参数（全部转为字符串传递）
+}
+
+message ExecuteDorisSQLResponse {
+  bool success = 1;
+  string message = 2;
+  // 如果是查询，返回结果集；如果是更新等，返回受影响行数
+  repeated DorisSQLRow rows = 3; // 查询结果（每行是一个map）
+}
+
+message DorisSQLRow {
+  map<string, string> columns = 1; // 列名到字符串值的映射
+}
+
+message CreateExternalAndInternalTableAndImportDataRequest {
+  string assetName = 1;
+  string chainInfoId = 2;
+  string alias = 3;
+  string jobInstanceId = 4;
+}
+
+message CreateExternalAndInternalTableAndImportDataResponse {
+  string tableName = 1; // 存储在doris中的表名
+}
+
+message ImportCsvFileToDorisRequest {
+  string bucketName = 1;
+  string objectName = 2;
+  string tableName = 3;
+  string dbName = 4;
+  repeated string columns = 5;
+  string columnSeparator = 6;
+}
+
+message ExportCsvFileFromDorisRequest {
+  string jobInstanceId = 1;
+  string tableName = 2;
+  string dbName = 3;
+  repeated string columns = 4;
+  string columnSeparator = 5;
+  string lineDelimiter = 6;
+  repeated SortRule sortRules = 7; // 排序规则
+  repeated FilterCondition filterConditions = 8; // 过滤条件
+}
+
+message ExportCsvFileFromDorisResponse {
+  string bucketName = 1;
+  string jobInstanceId = 2;
+}
+
+message ExportDorisDataToMiraDBRequest {
+  string tableName = 1;     // 存储到mira数据库表名
+  string sourceTableName = 2; // 从doris导出数据表
+  repeated ColumnItem columns = 3; // 导出字段
+}
+
+message ImportMiraDBDataToDorisRequest {
+  string miraTableName = 1; // mira中间表
+  string jobInstanceId = 2;
+}
+
+message ImportMiraDBDataToDorisResponse {
+  string dorisTableName = 1; // 存储在doris中的表名
+}
+
+message InternalTableInfoRequest {
+  string tableName = 1;
+  string dbName = 2;
+  bool isExactQuery = 3;
+  string jobInstanceId = 4;
+}
+
+message CleanTmpDataRequest {
+  string jobInstanceId = 1;
+}
+
+message GetRetryCleanupTasksRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message GetRetryCleanupTasksResponse {
+  repeated CleanupTaskInfo tasks = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message CleanupTaskInfo {
+  uint32 id = 1;
+  string job_instance_id = 2;
+  string status = 3;
+}
+
+message ReadDataSourceStreamingRequest {
+  string jobInstanceId = 1;
+  oneof data_source {
+    ExternalDataSource external = 2;  // 外部数据源
+    InternalDataSource internal = 3;  // 内部数据源
+    DorisDataSource doris = 4;  // doris数据源
+  }
+  repeated string columns = 5;
+  repeated SortRule sortRules = 6; // 排序规则
+  repeated FilterCondition filterConditions = 7; // 过滤条件
+}
+
+message ExecuteSqlRequest {
+	string sql = 1;                    // 要执行的SQL语句，必填
+  string dbName = 2;                 // 数据库名（传入jobInstanceId），必填
+  string targetTableName = 3;        // 查询结果写入的目标表名
+}
+
+message ExecuteSqlResponse {
+   // 通用字段
+   bool success = 1;                  // 执行是否成功
+   string message = 2;                // 执行结果消息
+   
+   // SELECT查询结果（流式数据）
+   oneof result {
+       bytes arrow_batch = 4;         // Arrow格式的数据批次（SELECT时使用）
+       DmlResult dmlResult = 5;       // DML操作结果（INSERT/UPDATE/DELETE时使用）
+   }
+}
+
+message DmlResult {
+  int64 affectedRows = 1;            // 受影响的行数
+  string executionTime = 2;          // 执行耗时
+}
+
+message ReadRequest {
+  oneof data_source {
+    ExternalDataSource external = 1;  // 外部数据源
+    InternalDataSource internal = 2;  // 内部数据源
+    DorisDataSource doris = 3;  // doris数据源
+  }
+  repeated string columns = 4;
+  repeated SortRule sortRules = 5; // 排序规则
+  repeated FilterCondition filterConditions = 6; // 过滤条件
+  repeated TableKey keys = 7;  // 表键信息
+}
+
+// FilterCondition 过滤条件结构体
+message FilterCondition {
+  string fieldName = 1;        // 过滤字段名
+  FilterValue fieldValue = 2;  // 过滤字段值
+  FilterOperator operator = 3; // 过滤操作符
+}
+
+message WriteRequest {
+  bytes arrow_batch = 1;
+  string dbName = 2;
+  string tableName = 3; // 写入的目标表名
+}
+
+message WriteResponse {
+  bool success = 1;
+  string message = 2; 
+}
+
+message ImportDataRequest {
+  repeated ImportTarget targets = 1; // 导入目标列表
+}
+
+// 数据导入目标配置
+message ImportTarget {
+  ExternalDataSource external = 1; // 外部数据源
+  string targetTableName = 2;      // 目标表名
+  string dbName = 3;               // 数据库名
+  repeated string columns = 4; // 导入字段
+  repeated TableKey keys = 5;  // 表键信息
+}
+
+// 表键信息
+message TableKey {
+  string keyName = 1;              // 键名称（可选）
+  KeyType keyType = 2;             // 键类型
+  repeated string columnNames = 3; // 键包含的列名（支持组合键）
+  map<string, string> attributes = 4; // 扩展属性（可选，可扩展）
+}
+
+message ImportDataResponse {
+  bool success = 1;
+  string message = 2;
+  repeated ImportResult results = 3; // 多个导入结果
+}
+
+// 单个导入结果
+message ImportResult {
+  string sourceTableName = 1;          // 源表名
+  string targetTableName = 2;          // 目标表名（写入的表）
+  string sourceDatabase = 3;           // 源数据库名
+  string targetDatabase = 4;           // 目标数据库名
+  int64 affectedRows = 5;              // 影响的行数
+  bool success = 6;                    // 该目标是否导入成功
+  string errorMessage = 7;             // 如果失败，错误信息
+}
+
+// 数据库常量
+enum DbConstant {
+  MIRA_ENGINE_TEMP = 0; // mpc 临时表
+}
+
+// spark功能
+enum OperationMode {
+  OPERATION_MODE_UNKNOWN = 0;
+  OPERATION_MODE_QUERY = 1;      // query
+  OPERATION_MODE_WRITE = 2;      // write
+  OPERATION_MODE_SORT = 3;       // sort
+  OPERATION_MODE_COUNT = 4;      // count
+  OPERATION_MODE_GROUPBY_COUNT = 5;  // groupby_count
+  OPERATION_MODE_JOIN = 6;       // join
+  OPERATION_MODE_ADD_HASH_COLUMN = 7;  // add_hash_column
+  OPERATION_MODE_PSI_JOIN = 8; // psi_join
+}
+
+// JOIN类型
+enum JoinType {
+  JOIN_TYPE_UNKNOWN = 0;
+  JOIN_TYPE_INNER = 1;   // inner
+  JOIN_TYPE_LEFT = 2;    // left
+  JOIN_TYPE_RIGHT = 3;   // right
+  JOIN_TYPE_OUTER = 4;   // outer
+}
+
+// 作业状态枚举
+enum JobStatus {
+  JOB_STATUS_UNKNOWN = 0;   // 未知状态
+  JOB_STATUS_PENDING = 1;   // 等待中
+  JOB_STATUS_RUNNING = 2;   // 运行中
+  JOB_STATUS_SUCCEEDED = 3; // 成功完成
+  JOB_STATUS_FAILED = 4;    // 失败
+}
+
+// 存储类型枚举
+enum StorageType {
+  STORAGE_TYPE_UNKNOWN = 0;
+  STORAGE_TYPE_DB = 1;    // 数据库存储
+  STORAGE_TYPE_MINIO = 2; // MinIO存储
+}
+
+// 表键类型枚举
+enum KeyType {
+  KEY_TYPE_UNKNOWN = 0;
+  KEY_TYPE_PRIMARY = 1;   // 主键
+  KEY_TYPE_FOREIGN = 2;   // 外键
+  KEY_TYPE_UNIQUE = 3;    // 唯一键
+  KEY_TYPE_INDEX = 4;     // 索引键
+  KEY_TYPE_AUTO_INCREMENT = 5;  // 自增主键
+}

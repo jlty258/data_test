@@ -1,0 +1,25 @@
+name: "mysql_1m_8fields"
+description: "MySQL 1M行 8字段测试"
+
+database:
+  type: "mysql"
+  name: "mysql_test"
+
+schema:
+  field_count: 8
+  field_types: ["int", "varchar", "text", "decimal", "datetime"]
+  max_field_size: 1024
+
+data:
+  row_count: 1000000
+  use_snapshot: true  # 使用快照避免重复生成
+
+tests:
+  - type: "read"
+    expected: 1000000
+    tolerance: 0.1  # 允许0.1%误差
+  
+  - type: "write"
+    expected: 1000000
+    tolerance: 0.1
+

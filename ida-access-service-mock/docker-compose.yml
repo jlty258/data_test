@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  ida-access-service-mock:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ida-access-service-mock:latest
+    container_name: ida-access-service-mock
+    ports:
+      - "9091:9091"
+    environment:
+      - PORT=9091
+    restart: unless-stopped
+

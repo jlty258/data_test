@@ -1,0 +1,51 @@
+data_service:
+  host: "localhost"
+  port: 9090
+
+mock_services:
+  gateway:
+    host: "localhost"
+    port: 8080
+  ida:
+    host: "localhost"
+    port: 9091
+
+databases:
+  - name: "mysql_test"
+    type: "mysql"
+    host: "localhost"
+    port: 3306
+    user: "root"
+    password: "password"
+    database: "test_db"
+  
+  - name: "kingbase_test"
+    type: "kingbase"
+    host: "localhost"
+    port: 54321
+    user: "system"
+    password: "password"
+    database: "test_db"
+  
+  - name: "gbase_test"
+    type: "gbase"
+    host: "localhost"
+    port: 5258
+    user: "gbase"
+    password: "password"
+    database: "test_db"
+
+  - name: "vastbase_test"
+    type: "vastbase"
+    host: "localhost"
+    port: 5432
+    user: "vastbase"
+    password: "password"
+    database: "test_db"
+
+minio:
+  endpoint: "localhost:9000"
+  access_key: "minioadmin"
+  secret_key: "minioadmin"
+  bucket: "test-bucket"
+

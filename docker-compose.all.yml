@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # Mira Gateway Mock服务
+  mira-gateway-mock:
+    build:
+      context: ./mira-gateway-mock
+      dockerfile: Dockerfile
+    image: mira-gateway-mock:latest
+    container_name: mira-gateway-mock
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - mock-services
+
+  # IDA Access Service Mock服务
+  ida-access-service-mock:
+    build:
+      context: ./ida-access-service-mock
+      dockerfile: Dockerfile
+    image: ida-access-service-mock:latest
+    container_name: ida-access-service-mock
+    ports:
+      - "9091:9091"
+    environment:
+      - PORT=9091
+    restart: unless-stopped
+    networks:
+      - mock-services
+
+  # Data Integrate Test 测试工具
+  data-integrate-test:
+    build:
+      context: ./data-integrate-test
+      dockerfile: Dockerfile
+    image: data-integrate-test:latest
+    container_name: data-integrate-test
+    depends_on:
+      mira-gateway-mock:
+        condition: service_healthy
+      ida-access-service-mock:
+        condition: service_started
+    environment:
+      # Data Service 配置（如果data-service在docker中，使用服务名；否则使用host.docker.internal）
+      - DATA_SERVICE_HOST=${DATA_SERVICE_HOST:-host.docker.internal}
+      - DATA_SERVICE_PORT=${DATA_SERVICE_PORT:-9090}
+      # Mock服务配置（使用docker服务名）
+      - GATEWAY_HOST=mira-gateway-mock
+      - GATEWAY_PORT=8080
+      - IDA_HOST=ida-access-service-mock
+      - IDA_PORT=9091
+      # 数据库配置（如果数据库在docker中，使用服务名；否则使用host.docker.internal）
+      - MYSQL_HOST=${MYSQL_HOST:-host.docker.internal}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+    volumes:
+      - ./data-integrate-test/config:/home/workspace/config:ro
+      - ./data-integrate-test/templates:/home/workspace/templates:ro
+      - ./data-integrate-test/snapshots:/home/workspace/snapshots
+      # 如果需要挂载测试结果
+      - ./data-integrate-test/reports:/home/workspace/reports
+    networks:
+      - mock-services
+    # 默认不自动启动，需要手动运行测试
+    # 使用方式: docker-compose --profile test run data-integrate-test -template=templates/mysql_1m_8fields.yaml
+    profiles:
+      - test
+    # 如果需要交互式运行，可以取消注释
+    # stdin_open: true
+    # tty: true
+
+networks:
+  mock-services:
+    driver: bridge
+

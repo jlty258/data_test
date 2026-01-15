@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Build artifacts
+ida-access-service-mock
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Generated code (will be generated in Docker)
+mirapb/
+
+# Test files
+*_test.go
+*.test
+
+# Documentation
+README.md
+*.md
+
+# Docker
+Dockerfile
+.dockerignore
+Makefile
+
+# OS
+.DS_Store
+Thumbs.db
+

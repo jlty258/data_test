@@ -1,0 +1,54 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+log/
+
+# Snapshots (keep directory structure but ignore data)
+snapshots/*.db
+snapshots/*.json
+
+# Reports
+reports/*.html
+reports/*.json
+
+# Generated proto files (if not committed)
+# proto/*.pb.go
+# proto/**/*.pb.go
+
+# Environment files
+.env
+.env.local
+
+# Build artifacts
+bin/
+dist/
+build/

@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package mira;
+import "proto/common.proto";
+option go_package = "./mirapb";
+
+// 获取包含隐私信息的数据源连接信息接口
+message GetPrivateDBConnInfoRequest {
+  string requestId = 1; // 请求ID
+  int32 dbConnId = 2;   // 数据源连接id
+}
+
+message GetPrivateDBConnInfoResp {
+  int32 dbConnId = 1;   // 数据源连接ID
+  string connName = 2;  // 数据源连接名称
+  string host = 3;      // 数据源地址
+  int32 port = 4;       // 端口号
+  int32 type = 5;       // 数据库类型： 1.mysql，2.kingbase，3.llm-hub
+  string username = 6;  // 数据库用户名
+  string password = 7;  // 数据库密码
+  string dbName = 8;    // 数据库名称
+  string createdAt = 10; // 创建时间
+  string llmHubToken = 11; // 连接 llm-hub 类型数据源的 token
+}
+
+message GetPrivateDBConnInfoResponse {
+  BaseResponse baseResponse = 1;
+  GetPrivateDBConnInfoResp data = 2;
+}
+
+// 通过资产英文名称获取资产详情
+message GetPrivateAssetInfoByEnNameRequest {
+  BaseRequest baseRequest = 1;
+  string assetEnName = 2; // 资产英文名称
+}
+
+message AssetInfo {
+  string assetId = 1;
+  string assetNumber = 2;
+  string assetName = 3;
+  string assetEnName = 4;
+  int32 assetType = 5;
+  string scale = 6;
+  string cycle = 7;
+  string timeSpan = 8;
+  string holderCompany = 9;
+  string intro = 10;
+  string txId = 11;
+  string uploadedAt = 12;
+  DataInfo dataInfo = 13;
+  int32 visibleType = 14;
+  string participantId = 15;
+  string participantName = 16;
+  string AccountAlias = 17;
+}
+
+message DataInfo {
+  string dbName = 1;
+  string tableName = 2;
+  repeated SaveTableColumnItem itemList = 3;
+  int32  dataSourceId = 4;
+}
+
+message SaveTableColumnItem {
+  string name = 1;
+  string dataType = 2;
+  int32 dataLength = 3;
+  string description = 4;
+  int32 isPrimaryKey = 5;
+  int32 privacyQuery = 6;
+}
+
+message GetPrivateAssetInfoByEnNameResponse {
+  BaseResponse baseResponse = 1;
+  AssetInfo data = 2;
+}
+
+// IDA Access Service 定义
+service MiraIdaAccess {
+  // 获取包含隐私信息的数据源连接信息接口
+  rpc GetPrivateDBConnInfo(GetPrivateDBConnInfoRequest) returns (GetPrivateDBConnInfoResponse);
+  
+  // 通过资产英文名称获取资产详情
+  rpc GetPrivateAssetInfoByEnName(GetPrivateAssetInfoByEnNameRequest) returns (GetPrivateAssetInfoByEnNameResponse);
+}
+

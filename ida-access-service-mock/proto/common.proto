@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package mira;
+option go_package = "./mirapb";
+
+message Empty {}
+
+message BaseRequest {
+  string requestId = 1; // 请求ID
+  string chainInfoId = 2; // 数据空间ID
+  string alias = 3; // 链账户别名
+  string address = 4; // 链账户地址
+ }
+
+// 基础返回体都包含 code 和 msg 两个字段
+message BaseResponse {
+  int32 code = 1;
+  string msg = 2;
+}
+
+// 过滤器
+message Filter {
+  string key = 1;
+  repeated string values = 2;
+}
+
+// 分页信息
+message Pagination {
+  int32 pageNumber = 1;
+  int32 pageSize = 2;
+  int64 total = 3;
+}
+

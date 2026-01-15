@@ -1,0 +1,1357 @@
+syntax = "proto3";
+
+// 表示当前 proto 文件属于 protobuf 包，它不是 go 文件的 package
+// 主要用于导入外部 proto 文件
+package mira;
+import "proto/common.proto";
+import "proto/google/api/field_behavior.proto";
+import "proto/google/api/annotations.proto";
+import "proto/google/protobuf/descriptor.proto";
+// 如果 protoc-gen-go 版本大于1.4.0, proto文件需要加上go_package,否则无法生成
+// 分号隔开，前一个表示生成文件的位置，后一个表示生成的 .go 文件的 package，如果只有一个则表示 go 文件的 package 名称
+// option go_package = "{out_path};out_go_package"; out_path 最终和 protoc 的 --go_out 拼接后才是完整路径
+option go_package = "./mirapb";
+
+///////////////////
+///////chain///////
+///////////////////
+
+enum ContractType {
+  UnknownContractType = 0;
+
+  // ContractTypeIda 资产登记合约
+  ContractTypeIda = 1;
+
+  // ContractTypeTdh 文件共享合约
+  ContractTypeTdh = 2;
+
+  // ContractTypeTdhMember tdh成员管理合约
+  ContractTypeTdhMember =3;
+
+  // ContractTypeTdhTransport tdh文件传输合约
+  ContractTypeTdhTransport = 4;
+
+  // ContractTypeTdhProtocol tdh协议管理合约
+  ContractTypeTdhProtocol = 5;
+
+  // ContractTypeDid did合约
+  ContractTypeDid = 6;
+
+  // ContractTypeMpc 隐私计算合约
+  ContractTypeMpc = 7;
+
+  // ContractTypeApiAuthContract 数据产品授权共享合约
+  ContractTypeApiAuthContract =8;
+
+  // ContractTypeApiReconciliation 数据产品共享对账合约
+  ContractTypeProductOrder = 9;
+
+  // ContractTypeFinancing 单证融资合约
+  ContractTypeFinancing = 10;
+
+  // ContractTypeIdaIdentity ida 身份认证合约
+  ContractTypeIdaIdentity = 11;
+}
+
+// Represents a key-value pair for method parameters.
+message KeyValuePair {
+  string key = 1; // Key of the parameter.
+  bytes value = 2; // Value of the parameter.
+}
+
+// Enum representing the type of method to invoke on the chain.
+enum MethodType {
+  UNDEFINED = 0; // Undefined method type.
+  Invoke = 1; // Invoke a method that modifies the state.
+  Query = 2; // Query a method that reads the state.
+}
+
+message ContractRequest {
+  BaseRequest baseRequest = 1;
+  repeated KeyValuePair kvPairs = 2; // Key-value pairs for the method parameters.
+  optional string txId = 3; // tx id
+  optional bool WithSyncResult = 4; // whether to wait for the result
+}
+
+// CallContract
+// Represents a request to perform an operation on the chain.
+message CallContractRequest {
+  BaseRequest baseRequest = 1;
+  ContractType contractType = 2; // Name of the contract to be called.
+  string contractMethod = 3; // Method of the contract to invoke.
+  MethodType methodType = 4; // Type of method to invoke (e.g., query or invoke).
+  repeated KeyValuePair kvPairs = 5; // Key-value pairs for the method parameters.
+  optional string txId = 6; // tx id
+  optional bool withSyncResult = 7; // true is sync, false is async.
+}
+
+// Represents a response from a chain request.
+message ContractResponse {
+  BaseResponse baseResponse = 1;
+  ContractResp data = 2; // Transaction response containing the result of the operation.
+}
+
+// tx request - tx response, only for RPC response
+message ContractResp {
+  bytes result = 1;
+  // tx id of request
+  string tx_id = 2;
+  // async tx mode: tx timestamp is zero
+  // sync tx mode: tx timestamp is TxRequest.Payload.Timestamp
+  int64 tx_timestamp = 3;
+  // async tx mode: tx block height is zero
+  // sync tx mode: tx block height is the height of block which this tx was packaged
+  uint64 tx_block_height = 4;
+}
+
+message GetDataFromKeyRequest {
+  BaseRequest baseRequest = 1;
+  string key = 2;
+}
+
+//根据链账户别名获取地址
+message GetAccountAddressByAliasReq {
+  BaseRequest baseRequest = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message GetAccountAddressByAliasResp {
+  BaseResponse baseResponse = 1;
+  // 链账户地址
+  string address = 2;
+}
+
+message ListChainRequest {
+  string requestId = 1;
+}
+
+message ListChainResponse {
+  BaseResponse baseResponse = 1;
+  repeated string data = 2;
+}
+
+message ChainBaseRequest {
+  string requestId = 1;
+  string chainInfoId = 2;
+}
+
+// 链账户地址信息
+message AccountAddressData {
+  uint32 id = 1; // 主键id
+  string address = 2; // 链账户地址
+  string alias = 3; // 账户别名
+}
+
+// Response message containing detailed information about a specific chain.
+message GetChainInfoResponse {
+  BaseResponse baseResponse = 1;
+  GetChainInfoResp data = 2; // Detailed chain information data.
+}
+
+// Request message for updating information about a specific chain.
+message GetChainInfoResp {
+  string id = 1; // Unique identifier for the chain to update.
+  string name = 2; // New name for the chain.
+}
+
+message GetPrivateAddressByAliasRequest {
+  BaseRequest baseRequest = 1;
+}
+
+message GetPrivateAddressByAliasResponse {
+  BaseResponse baseResponse = 1;
+  string data = 2;
+}
+
+message GetPrivateAccountInfoRequest {
+  BaseRequest baseRequest = 1;
+  string address = 2;
+  string sid = 3;
+}
+
+message GetPrivateAccountInfoResponse {
+  BaseResponse baseResponse = 1;
+  string alias = 2;
+  string chainName = 3;
+  string did = 4;
+}
+
+///////////////////
+///////参与方///////
+///////////////////
+message ParticipantInfoResponse {
+  BaseResponse baseResponse = 1;
+  repeated ParticipantInfoResp data = 2; // 链账户信息列表
+}
+
+message ParticipantInfoResp{
+  uint32 id = 1; // 主键
+  string name = 3; // 企业名称
+  string usci = 4; // 企业社会信用代码
+  string did = 5; // 企业 DID
+  repeated AccountAddressData accountAddressDatas = 6; // 链账户地址信息列表
+}
+
+message GetPrivatePubkeyRequest {
+  BaseRequest baseRequest = 1;
+}
+
+message GetPrivatePubkeyResponse {
+  BaseResponse baseResponse = 1;
+  // 链账户对应的公钥
+  string data = 2;
+}
+
+message CheckLocalParticipantRequest{
+  BaseRequest baseRequest = 1;
+}
+
+message CheckLocalParticipantResponse{
+  BaseResponse baseResponse = 1;
+  // 是否是本地参与方
+  bool isLocalParticipant = 2;
+}
+
+
+message JudgeLocalParticipantRequest{
+  BaseRequest baseRequest = 1;
+  repeated string participant = 2;
+}
+
+message JudgeLocalParticipantResponse{
+  BaseResponse baseResponse = 1;
+  // 本地参与方
+  repeated string participant = 2;
+}
+
+//////////////////////////
+///////registration-service////////
+//////////////////////////
+// ============ 数据源连接接口定义(5) ================/
+
+// 创建数据源连接接口
+message CreateDataSourceRequest {
+  BaseRequest baseRequest = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // 数据库模式：1.关系型，2.非关系型
+  int32 dbPattern = 2 [(google.api.field_behavior) = REQUIRED];
+  // 数据库类型： 1.mysql，2.kingbase，3.llm-hub, 4.TIDB, 5.TDSQL
+  // 【v3.0.2新增】新增数据源类型 TIDB，TDSQL
+  int32 dbType = 3 [(google.api.field_behavior) = REQUIRED];
+  // 数据源名称
+  string name = 4 [(google.api.field_behavior) = REQUIRED];
+  // 数据源地址
+  string host = 5 [(google.api.field_behavior) = REQUIRED];
+  // 端口号
+  int32 port = 6 [(google.api.field_behavior) = REQUIRED];
+  // 数据库用户名
+  string username = 7 [(google.api.field_behavior) = OPTIONAL];
+  // 数据库密码
+  string password = 8 [(google.api.field_behavior) = OPTIONAL];
+  // 数据库名称
+  string instanceName = 9 [(google.api.field_behavior) = OPTIONAL];
+  // 连接 llm-hub 类型数据源的 token
+  string llmHubToken = 10 [(google.api.field_behavior) = OPTIONAL];
+  // 【v3.0.1新增】链帐户
+  string address = 11 [(google.api.field_behavior) = REQUIRED];
+
+
+  // 【v3.0.2新增】数据空间sid
+  string chainInfoId = 12 [(google.api.field_behavior) = REQUIRED];
+  // 租户id资源归属id
+  int64 TenantId = 13 [(google.api.field_behavior) = REQUIRED];
+  //  用户唯一id
+
+  int64 Uin = 14 [(google.api.field_behavior) = REQUIRED];
+
+}
+
+message CreateDataSourceResponse {
+  BaseResponse baseResponse = 1;
+  DataSourceId data = 2;
+}
+
+message DataSourceId {
+  int32 id = 1;
+}
+
+message CreateAssetRequest {
+  BaseRequest baseRequest = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // 链空间、账户等相关信息
+  ChainInfo chainInfo = 2 [(google.api.field_behavior) = REQUIRED];
+  // 资源基本信息
+  ResourceBasic resourceBasic = 3 [(google.api.field_behavior) = REQUIRED];
+  // 库表资源
+  Table table = 4 [(google.api.field_behavior) = OPTIONAL];
+  // 文件资源
+  File file = 5 [(google.api.field_behavior) = OPTIONAL];
+}
+
+message File {
+  // 数据源连接ID
+  int32 dataSourceId = 1 [(google.api.field_behavior) = REQUIRED];
+  // 文件路径
+  string path = 2 [(google.api.field_behavior) = REQUIRED];
+  // 文件列表
+  repeated FileItem files = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message FileItem {
+  // 文件名称
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+  // 文件大小
+  string size = 2 [(google.api.field_behavior) = REQUIRED];
+  // 更新时间
+  string updatedAt = 3 [(google.api.field_behavior) = REQUIRED];
+  // 文件类型，1-文件，2-文件夹
+  int32 fileType = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+message CreateAssetResponse {
+  BaseResponse baseResponse = 1;
+  // 资源id
+  ResourceId data = 2;
+}
+
+message ResourceId {
+  int32 id = 1;
+}
+
+// ============== 资产登记接口定义(14) ============== //
+// 1. 数据资产登记接口
+
+// 数据资产类型枚举
+enum DataProductType {
+  DATA_PRODUCT_TYPE_DATASET = 0; // 数据集
+  DATA_PRODUCT_TYPE_LLM = 1;     // 大模型语料
+}
+
+message AssetList{
+  Pagination pagination = 1;
+  repeated AssetItem list = 2;
+}
+
+// 数据表字段信息
+message SaveTableColumnItem {
+  string name = 1;
+  string dataType = 2;
+  int32 dataLength = 3;
+  string description = 4;
+  int32 isPrimaryKey = 5;
+  int32 privacyQuery = 6;
+}
+
+// 数据库信息
+message DataInfo {
+  string dbName = 1;
+  string tableName = 2;
+  repeated SaveTableColumnItem itemList = 3;
+  int32  dataSourceId = 4;
+}
+
+// 资产条目
+message AssetItem {
+  string assetId = 1;
+  string assetNumber = 2;
+  string assetName = 3;
+  string holderCompany = 4;
+  string intro = 5;
+  string txId = 6;
+  string uploadedAt = 7;
+  string chainName = 8;
+  string participantId = 9;
+  string participantName = 10;
+  string alias = 11;
+  DataProductType dataProductType = 12;
+}
+
+// 资产信息
+message AssetInfo {
+  string assetId = 1;
+  string assetNumber = 2;
+  string assetName = 3;
+  string assetEnName = 4;
+  int32 assetType = 5;
+  string scale = 6;
+  string cycle = 7;
+  string timeSpan = 8;
+  string holderCompany = 9;
+  string intro = 10;
+  string txId = 11;
+  string uploadedAt = 12;
+  DataInfo dataInfo = 13;
+  int32 visibleType = 14;
+  string participantId = 15;
+  string participantName = 16;
+  string AccountAlias = 17;
+  DataProductType dataProductType = 18;
+}
+
+message GetPrivateDBConnInfoResp {
+  int32 dbConnId = 1;   // 数据源连接ID
+  string connName = 2;  // 数据源连接名称
+  string host = 3;      // 数据源地址
+  int32 port = 4;       // 端口号
+  int32 type = 5;       // 数据库类型： 1.mysql，2.kingbase，3.llm-hub
+  string username = 6;  // 数据库用户名
+  string password = 7;  // 数据库密码
+  string dbName = 8;    // 数据库名称
+  string createdAt = 10; // 创建时间
+  string llmHubToken = 11; // 连接 llm-hub 类型数据源的 token（v2.2.0 新增）
+}
+
+// ============== 隐私计算 ============== //
+// 1. 获取包含隐私信息的数据源连接信息接口
+message GetPrivateDBConnInfoRequest {
+  string requestId = 1; // 请求ID
+  int32 dbConnId = 2;   // 数据源连接id
+}
+
+message GetPrivateDBConnInfoResponse {
+  BaseResponse baseResponse = 1;
+  GetPrivateDBConnInfoResp data = 2;
+}
+
+
+// 2. 获取链上资产列表
+message GetPrivateAssetListRequest {
+  BaseRequest baseRequest = 1;
+  int32 pageNumber = 2;  // 当前页
+  int32 pageSize = 3; // 每页条数
+  repeated Filter filters = 4; // 搜索条件
+}
+
+message GetPrivateAssetListResponse {
+  BaseResponse baseResponse = 1;
+  AssetList data = 2;
+}
+
+// 3. 获取链上资产详情
+message GetPrivateAssetInfoRequest {
+  string requestId = 1; // 请求ID
+  int32 assetId = 2; // 资产自增id
+}
+
+message GetPrivateAssetInfoResponse {
+  BaseResponse baseResponse = 1;
+  AssetInfo data = 2;
+}
+
+// 4. 通过资产英文名称获取资产详情
+message GetPrivateAssetInfoByEnNameRequest {
+  BaseRequest baseRequest = 1; // 请求ID
+  string assetEnName = 2; // 资产英文名称
+}
+
+message AliasAsset {
+  // 链账户别名
+  string alias = 1;
+  // 链账户地址
+  string address = 2;
+  // 主体名称
+  string entityName = 3;
+  repeated AssetData list = 4;
+}
+
+
+
+message AssetData {
+  int32 assetId = 1;
+  // 资源唯一标识
+  string assetNumber = 2;
+  // 中文名
+  string assetName = 3;
+  // 英文名
+  string assetEnName = 4;
+  // 资源类型，1-库表，2-文件
+  int32 type = 5;
+
+  DataProductType dataProductType = 6;
+}
+
+message GetPrivateAssetInfoByEnNameResponse {
+  BaseResponse baseResponse = 1;
+  AssetInfo data = 2;
+}
+
+// 5. 分组获取企业列表和资产对应关系
+message GetPrivateAliasAssetRequest {
+  BaseRequest baseRequest = 1;
+  repeated Filter filters = 2; // 搜索条件
+}
+
+message GetPrivateAliasAssetResponse {
+  BaseResponse baseResponse = 1;
+  repeated AliasAsset data = 2;
+}
+
+// 7. 根据平台英文名获取平台信息
+message GetPrivateParticipantRequest {
+  BaseRequest baseRequest = 1;
+}
+
+message GetPrivateParticipantResponse {
+  BaseResponse baseResponse = 1;
+  PrivateParticipantByAliasResponse data = 2;
+}
+
+message PrivateParticipantByAliasResponse {
+  string name = 1; // 企业名称
+  string usci = 2; // 企业社会信用代码
+  string did = 3; // 企业 DID
+}
+
+// 获取产品信息
+message GetPrivateProductInfoReq {
+  BaseRequest baseRequest = 1;
+  string productNumber = 2;
+  string sid = 3;
+}
+
+message GetPrivateProductInfoResp {
+  BaseResponse baseResponse = 1;
+  string devSql = 2;
+}
+
+message ChainInfo {
+  // 链空间唯一标识
+  string chainInfoId = 1 [(google.api.field_behavior) = REQUIRED];
+  // 链账户
+  string address = 2 [(google.api.field_behavior) = REQUIRED];
+  // 连接器逻辑id，和链账户对应
+  string cid = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ResourceBasic {
+  // 数据资源标识
+  string resourceNumber = 1 [(google.api.field_behavior) = REQUIRED];
+  // 资源中文名
+  string zhName = 2 [(google.api.field_behavior) = REQUIRED];
+  // 资源英文名
+  string enName = 3 [(google.api.field_behavior) = REQUIRED];
+  // 资源描述
+  string description = 4 [(google.api.field_behavior) = REQUIRED];
+  // 数据规模值
+  int32 scaleValue = 5 [(google.api.field_behavior) = OPTIONAL];
+  // 数据规模单位，1-MB
+  int32 scaleUnit = 6 [(google.api.field_behavior) = OPTIONAL];
+  // 使用限制
+  string useLimit = 7 [(google.api.field_behavior) = REQUIRED];
+  // 资源类型，1-库表，2-文件
+  int32 type = 8 [(google.api.field_behavior) = REQUIRED];
+  // 数据类型，1-个人数据，2-企业数据，3-公共数据
+  int32 dataType = 9 [(google.api.field_behavior) = OPTIONAL];
+  // 其他说明
+  string otherNote = 10 [(google.api.field_behavior) = OPTIONAL];
+  // 是否需授权使用，1-不需要，2-需要
+  int32 authorized = 11 [(google.api.field_behavior) = REQUIRED];
+  // 是否支持机器学习，1-不支持，2-支持
+  int32 machineLearning = 12 [(google.api.field_behavior) = REQUIRED];
+}
+
+message Table {
+  // 数据源连接ID
+  int32 dataSourceId = 1 [(google.api.field_behavior) = REQUIRED];
+  // 表名
+  string tableName = 2 [(google.api.field_behavior) = REQUIRED];
+  // 字段列表
+  repeated TableColumn columns = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message TableColumn {
+  // 字段原始名称
+  string originName = 1 [(google.api.field_behavior) = REQUIRED];
+  // 字段名称
+  string name = 2 [(google.api.field_behavior) = REQUIRED];
+  // 字段类型
+  string dataType = 3 [(google.api.field_behavior) = REQUIRED];
+  // 字段长度
+  int32 dataLength = 4 [(google.api.field_behavior) = REQUIRED];
+  // 是否为主键，1-否，2-是
+  int32 primaryKey = 5 [(google.api.field_behavior) = REQUIRED];
+  // 是否非空，1-否，2-是
+  int32 notNull = 6 [(google.api.field_behavior) = REQUIRED];
+  // 字段描述
+  string description = 7 [(google.api.field_behavior) = REQUIRED];
+  // 分级分类
+  int32 level = 8 [(google.api.field_behavior) = REQUIRED];
+  // 数据示例
+  string dataExample = 9 [(google.api.field_behavior) = REQUIRED];
+  // 【v3.0.1新增】自定义字段
+  repeated FieldValuePair customFields = 10 [(google.api.field_behavior) = REQUIRED];
+}
+
+message FieldValuePair {
+  string field = 1 [(google.api.field_behavior) = REQUIRED];
+  string value = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+///////////////////////////////////
+///////key-service///////
+//////////////////////////////////
+
+enum AlgoType {
+  DEFAULT = 0;
+  SM2 = 1;
+  SM4 = 2;
+  AES = 3;
+}
+
+enum DataEnvelopAlgoType {
+  SM2SM4DataEnvelope = 0;
+  Sm2CpAbeDataEnvelope = 1;
+}
+
+message GetSkResponse {
+  // 业务返回码，0 表示执行成功，非 0 表示执行失败
+  int32 code = 1;
+
+  // 执行信息，主要是失败的报错提示信息
+  string msg = 2;
+
+  string sk = 3;
+}
+
+message KeyCreateRequest {
+  AlgoType algoType = 1;
+  int32 keySize = 2;
+}
+
+message KeyCreateResponse {
+  // 业务返回码，0 表示执行成功，非 0 表示执行失败
+  int32 code = 1;
+  // 执行信息，主要是失败的报错提示信息
+  string msg = 2;
+  string keyId = 3;
+  string pubKey = 4;
+}
+
+message KeyEncryptRequest {
+  string plainText = 1;
+  AlgoType algoType = 2;
+  string pubKey = 3;
+  string extraParam = 4;
+}
+
+message KeyEncryptResponse {
+  // 业务返回码，0 表示执行成功，非 0 表示执行失败
+  int32 code = 1;
+  // 执行信息，主要是失败的报错提示信息
+  string msg = 2;
+  string cipherText = 3;
+}
+
+message DataEnvelopeEncryptResponse {
+  // 业务返回码，0 表示执行成功，非 0 表示执行失败
+  int32 code = 1;
+  // 执行信息，主要是失败的报错提示信息
+  string msg = 2;
+  string cipherText = 3;
+  string kek = 4;
+}
+
+message DataEnvelopeEncryptWithPkListResponse {
+  // 业务返回码，0 表示执行成功，非 0 表示执行失败
+  int32 code = 1;
+  // 执行信息，主要是失败的报错提示信息
+  string msg = 2;
+  string cipherText = 3;
+  repeated string kekList = 4;
+}
+
+message KeyEncryptWithPkListRequest {
+  string plainText = 1;
+  AlgoType algoType = 2;
+  repeated string pubKeyList = 3;
+  string extraParam = 4;
+}
+
+message DataEnvelopeEncryptRequest {
+  string plainText = 1;
+  DataEnvelopAlgoType dataEnvelopAlgoType = 2;
+  string pubKey = 3;
+  string extraParam = 4;
+}
+
+message DataEnvelopeEncryptWithPkListRequest {
+  string plainText = 1;
+  DataEnvelopAlgoType dataEnvelopAlgoType = 2;
+  repeated string pubKeyList = 3;
+  string extraParam = 4;
+}
+
+message KeyEncryptWithPkListResponse {
+  // 业务返回码，0 表示执行成功，非 0 表示执行失败
+  int32 code = 1;
+  // 执行信息，主要是失败的报错提示信息
+  string msg = 2;
+  repeated string cipherTextList = 3;
+}
+
+message KeyDecryptRequest {
+  string cipherText = 1;
+  AlgoType algoType = 2;
+  string pubKey = 3;
+  string keyId = 4;
+}
+
+message DataEnvelopeDecryptRequest {
+  string cipherText = 1;
+  DataEnvelopAlgoType dataEnvelopAlgoType = 2;
+  string pubKey = 3;
+  string keyId = 4;
+  string kek = 5;
+}
+
+message KeyDecryptResponse {
+  // 业务返回码，0 表示执行成功，非 0 表示执行失败
+  int32 code = 1;
+  // 执行信息，主要是失败的报错提示信息
+  string msg = 2;
+  string plainText = 3;
+}
+
+message GetPrivateKeyRequest {
+  string pubKey = 1;
+  string keyId = 2;
+  bool isLocal = 3;
+}
+
+message GetContractInfoRequest {
+  BaseRequest baseRequest = 1;
+  string sid = 2;
+  ContractType contractType = 3;
+  string requestId = 4;
+}
+
+message GetContractInfoResponse {
+  BaseResponse baseResponse = 1;
+  string contractName = 2;
+}
+
+///////////////////////////
+///////数据库///////
+//////////////////////////
+
+message GetJobInstanceTaskRequest {
+  string  jobInstanceId = 1;
+  string  taskId = 2;
+  string  chainInfoId = 3;
+}
+
+message GetJobInstanceTaskResponse {
+  BaseResponse baseResponse = 1;
+  JobInstanceTask jobInstanceTask = 2;
+}
+
+
+message GetJobInstanceTaskByStatusRequest {
+  repeated  int32 status = 1;
+}
+
+message GetJobInstanceTaskByStatusResponse {
+  BaseResponse baseResponse = 1;
+  repeated JobInstanceTask jobInstanceTask = 2;
+}
+
+
+message GetJobInstanceRequest {
+  string  JobInstanceId  = 1;
+}
+
+message GetJobInstanceResponse {
+  BaseResponse baseResponse = 1;
+  JobInstance jobInstance = 2;
+}
+
+message GetResultStorageConfigRequest {
+  string  jobInstanceId  = 1;
+}
+
+message GetResultStorageConfigResponse {
+  BaseResponse baseResponse = 1;
+  ResultStorageConfig resultStorageConfig = 2;
+}
+
+message ResultStorageConfig {
+  int32 resultStorageType = 1;
+  string host = 2;
+  int32 port = 3;
+  string db = 4;
+  string user = 5;
+  string password = 6;
+}
+
+
+message TaskTLSInfo {
+  string id = 1;
+  string remoteParticipantId = 2;
+  int32 type = 3;         // 使用枚举代替裸 int 类型
+  string ca = 4;
+  string cert = 5;
+  string key = 6;
+}
+
+message Infrastructure {
+  Network network = 1;
+  // 如果你以后恢复 compute 字段，可以加：
+  // Compute compute = 2;
+}
+
+
+message Network {
+  repeated TaskPort portList = 1;
+}
+
+message TaskPort {
+  string name = 1;
+  string ip = 2;
+  int32 port = 3;
+  string protocol = 4;
+  bool expose = 5;
+  int32 stage = 6;
+}
+
+message TaskParticipant {
+  string participantId = 1;
+  int32 role = 2;
+  int32 status = 3;
+  string timestamp = 4;
+  repeated int32 partnerTypeList = 5;
+  Infrastructure infrastructure = 6;
+  repeated TaskTLSInfo tlsInfoList = 7;
+  map<string, string> param = 8;
+}
+
+
+message JobInstanceTask {
+  string jobId = 1;
+  string taskId = 2;
+  string jobInstanceId = 3;
+  int32 status = 4;
+  repeated TaskParticipant participantList = 5;
+  int32 serviceType = 6;
+}
+
+
+message JobInstance {
+  int32 jobReferId = 1;
+  string jobInstanceId = 2;
+  string jobId = 3;
+  int32 status = 4;
+  int32 deployStatus = 5;
+  string failedReason = 6;
+}
+
+
+service MiraIdaAccess {
+  ///////////////////////////
+  ///////上链相关接口///////
+  //////////////////////////
+  //取消job
+  rpc CreateJob(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/CreateJob"
+      body: "*"
+    };
+  };
+  //创建job
+  rpc CancelJob(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/CancelJob"
+      body: "*"
+    };
+  };
+  //创建job审批
+  rpc CreateJobApprove(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/CreateJobApprove"
+      body: "*"
+    };
+  };
+  //获取job列表
+  rpc GetJobList(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetJobList"
+      body: "*"
+    };
+  };
+  //获取job
+  rpc GetJob(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetJob"
+      body: "*"
+    };
+  };
+  //获取job审批列表
+  rpc GetJobApproveList(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetJobApproveList"
+      body: "*"
+    };
+  };
+  //获取审批详情
+  rpc GetJobApprove(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetJobApprove"
+      body: "*"
+    };
+  };
+  //获取job状态
+  rpc SetJobStatus(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/SetJobStatus"
+      body: "*"
+    };
+  };
+  //创建job实例
+  rpc CreateJobInstance(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/CreateJobInstance"
+      body: "*"
+    };
+  };
+  //设置job实例状态为ready
+  rpc SetJobInstanceStatusReady(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/SetJobInstanceStatusReady"
+      body: "*"
+    };
+  };
+  //设置task参与方的信息
+  rpc SetTaskPartyInfo(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/SetTaskPartyInfo"
+      body: "*"
+    };
+  };
+  //设置task状态
+  rpc SetTaskStatus(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/SetTaskStatus"
+      body: "*"
+    };
+  };
+  //更新job实例
+  rpc UpdateJobInstance(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/UpdateJobInstance"
+      body: "*"
+    };
+  };
+  //获取job实例信息
+  rpc GetJobInstanceInfo(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetJobInstanceInfo"
+      body: "*"
+    };
+  };
+  //获取job实例详情
+  rpc GetJobInstanceDetail(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetJobInstanceDetail"
+      body: "*"
+    };
+  };
+  //取消job实例
+  rpc CancelJobInstance(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/CancelJobInstance"
+      body: "*"
+    };
+  };
+  //更新service状态
+  rpc UpdateServiceStatus(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/UpdateServiceStatus"
+      body: "*"
+    };
+  };
+  //设置task输出
+  rpc SetTaskOutput(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/SetTaskOutput"
+      body: "*"
+    };
+  };
+  //更新job实例失败原因
+  rpc UpdateJobInstanceFailedReason(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/UpdateJobInstanceFailedReason"
+      body: "*"
+    };
+  };
+  //获取计算资源列表
+  rpc GetComputingResourceAll(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetComputingResourceAll"
+      body: "*"
+    };
+  };
+  //创建计算资源
+  rpc CreateComputingResource(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/CreateComputingResource"
+      body: "*"
+    };
+  };
+  //根据partyId获取计算资源
+  rpc GetComputingResourceByPartyId(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetComputingResourceByPartyId"
+      body: "*"
+    };
+  };
+  //获取计算资源
+  rpc GetComputingResource(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetComputingResource"
+      body: "*"
+    };
+  };
+  //重新发布计算资源
+  rpc RepublishComputingResource(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/RepublishComputingResource"
+      body: "*"
+    };
+  };
+  //删除计算资源
+  rpc DeleteComputingResource(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/DeleteComputingResource"
+      body: "*"
+    };
+  };
+  //创建计算模型
+  rpc CreateComputingModel(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/CreateComputingModel"
+      body: "*"
+    };
+  };
+  //获取计算模型列表
+  rpc GetComputingModelList(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetComputingModelList"
+      body: "*"
+    };
+  };
+  //获取计算模型
+  rpc GetComputingModel(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetComputingModel"
+      body: "*"
+    };
+  };
+  //获取服务详情
+  rpc QueryServiceDetails(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/QueryServiceDetails"
+      body: "*"
+    };
+  };
+  //获取task详情
+  rpc QueryTaskDetails(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/QueryTaskDetails"
+      body: "*"
+    };
+  };
+  //设置执行结果的服务地址
+  rpc SetResultServerAddr(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/SetResultServerAddr"
+      body: "*"
+    };
+  };
+  //获取执行结果的服务地址
+  rpc GetResultServerAddr(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetResultServerAddr"
+      body: "*"
+    };
+  };
+  //更新job实例触发器状态
+  rpc UpdateJobTriggerEnable(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/UpdateJobTriggerEnable"
+      body: "*"
+    };
+  };
+  //设置任务失败
+  rpc SetTaskFailed(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/SetTaskFailed"
+      body: "*"
+    };
+  };
+  //设置任务失败
+  rpc SetServiceFailed(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/SetServiceFailed"
+      body: "*"
+    };
+  };
+  //更新任务信息
+  rpc UpdateTaskInfo(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/UpdateTaskInfo"
+      body: "*"
+    };
+  };
+  //更新任务信息
+  rpc UpdateJobIsSchedulable(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/UpdateJobIsSchedulable"
+      body: "*"
+    };
+  };
+  rpc CallContract(CallContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/CallContract"
+      body: "*"
+    };
+  }
+  //根据key查找数据
+  rpc GetDataFromKey(GetDataFromKeyRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetDataFromKey"
+      body: "*"
+    };
+  };
+  rpc AddComputingAlgorithm(ContractRequest) returns(ContractResponse) {
+    option (google.api.http) = {
+      post: "/v1/AddComputingAlgorithm"
+      body: "*"
+    };
+  };
+
+  //获取本方的参与方信息
+  rpc GetParticipantInfo(ChainBaseRequest)returns(ParticipantInfoResponse){
+    option (google.api.http) = {
+      post: "/v1/GetParticipantInfo"
+      body: "*"
+    };
+  };
+  rpc ListChainInfo(ListChainRequest) returns(ListChainResponse) {
+    option (google.api.http) = {
+      post: "/v1/ListChainInfo"
+      body: "*"
+    };
+  };
+  rpc GetChainInfo(ChainBaseRequest) returns(GetChainInfoResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetChainInfo"
+      body: "*"
+    };
+  };
+  rpc CheckLocalParticipant(CheckLocalParticipantRequest) returns(CheckLocalParticipantResponse){
+    option (google.api.http) = {
+      post: "/v1/CheckLocalParticipant"
+      body: "*"
+    };
+  };
+  rpc GetPrivateAddressByAlias(GetPrivateAddressByAliasRequest) returns(GetPrivateAddressByAliasResponse){
+    option (google.api.http) = {
+      post: "/v1/GetPrivateAddressByAlias"
+      body: "*"
+    };
+  };
+  rpc GetPrivateAccountInfo(GetPrivateAccountInfoRequest) returns(GetPrivateAccountInfoResponse){
+    option (google.api.http) = {
+      post: "/v1/GetPrivateAccountInfo"
+      body: "*"
+    };
+  };
+  rpc JudgeLocalParticipant(JudgeLocalParticipantRequest) returns(JudgeLocalParticipantResponse){
+    option (google.api.http) = {
+      post: "/v1/JudgeLocalParticipant"
+      body: "*"
+    };
+  };
+
+  // 获取合约信息
+  rpc GetContractInfo(GetContractInfoRequest) returns(GetContractInfoResponse) {
+    option (google.api.http) = {
+      post: "/v1/GetContractInfo"
+      body: "*"
+    };
+  };
+
+  ///////////////////////////
+  ///////资产相关接口///////
+  //////////////////////////
+  // 1. 获取包含隐私信息的数据源连接信息接口
+  rpc GetPrivateDBConnInfo(GetPrivateDBConnInfoRequest) returns (GetPrivateDBConnInfoResponse){
+    option (google.api.http) = {
+      post: "/v1/GetPrivateDBConnInfo"
+      body: "*"
+    };
+  };
+  // 2. 获取链上资产列表
+  rpc GetPrivateAssetList(GetPrivateAssetListRequest) returns (GetPrivateAssetListResponse){
+    option (google.api.http) = {
+      post: "/v1/GetPrivateAssetList"
+      body: "*"
+    };
+  };
+  // 3. 获取链上资产详情
+  rpc GetPrivateAssetInfo(GetPrivateAssetInfoRequest) returns (GetPrivateAssetInfoResponse){
+    option (google.api.http) = {
+      post: "/v1/GetPrivateAssetInfo"
+      body: "*"
+    };
+  };
+  // 4. 通过资产英文名称获取资产详情
+  rpc GetPrivateAssetInfoByEnName(GetPrivateAssetInfoByEnNameRequest) returns (GetPrivateAssetInfoByEnNameResponse){
+    option (google.api.http) = {
+      post: "/v1/GetPrivateAssetInfoByEnName"
+      body: "*"
+    };
+  };
+  // 5. 分组获取企业列表和资产对应关系
+  rpc GetPrivateAliasAsset(GetPrivateAliasAssetRequest) returns (GetPrivateAliasAssetResponse){
+    option (google.api.http) = {
+      post: "/v1/GetPrivateAliasAsset"
+      body: "*"
+    };
+  };
+  // 7. 根据平台英文名获取平台信息
+  rpc GetPrivateParticipantInfo(GetPrivateParticipantRequest) returns (GetPrivateParticipantResponse){
+    option (google.api.http) = {
+      post: "/v1/GetPrivateParticipantInfo"
+      body: "*"
+    };
+  };
+  //创建数据源
+  rpc CreateDataSource(CreateDataSourceRequest) returns (CreateDataSourceResponse){
+    option (google.api.http) = {
+      post: "/v1/CreateDataSource"
+      body: "*"
+    };
+  };
+  //创建资产
+  rpc CreateAsset(CreateAssetRequest) returns (CreateAssetResponse){
+    option (google.api.http) = {
+      post: "/v1/CreateAsset"
+      body: "*"
+    };
+  };
+
+  rpc GetPrivateParticipantPubkey(GetPrivatePubkeyRequest) returns (GetPrivatePubkeyResponse){
+    option (google.api.http) = {
+      post: "/v1/GetPrivateParticipantPubkey"
+      body: "*"
+    };
+  };
+  // 获取产品信息
+  rpc GetPrivateProductInfo(GetPrivateProductInfoReq) returns (GetPrivateProductInfoResp){
+    option (google.api.http) = {
+      post: "/v1/GetPrivateProductInfo"
+      body: "*"
+    };
+  };
+  ///////////////////////////
+  ////////加解密相关接口////////
+  //////////////////////////
+  // 生成密钥
+  rpc CreateKey(KeyCreateRequest) returns(KeyCreateResponse){
+    option (google.api.http) = {
+      post: "/v1/CreateKey"
+      body: "*"
+    };
+  };
+  // 加密
+  rpc Encrypt(KeyEncryptRequest) returns(KeyEncryptResponse){
+    option (google.api.http) = {
+      post: "/v1/Encrypt"
+      body: "*"
+    };
+  };
+  // 传入多个公钥，对同一个明文加密
+  rpc EncryptWithPkList(KeyEncryptWithPkListRequest) returns(KeyEncryptWithPkListResponse){
+    option (google.api.http) = {
+      post: "/v1/EncryptWithPkList"
+      body: "*"
+    };
+  };
+  // 解密
+  rpc Decrypt(KeyDecryptRequest) returns(KeyDecryptResponse){
+    option (google.api.http) = {
+      post: "/v1/Decrypt"
+      body: "*"
+    };
+  };
+  // 数字信封加密
+  rpc EncWithDeK(DataEnvelopeEncryptRequest) returns(DataEnvelopeEncryptResponse){
+    option (google.api.http) = {
+      post: "/v1/EncWithDeK"
+      body: "*"
+    };
+  };
+  // 数字信封解密
+  rpc DecByKeK(DataEnvelopeDecryptRequest) returns(KeyDecryptResponse){
+    option (google.api.http) = {
+      post: "/v1/DecByKeK"
+      body: "*"
+    };
+  };
+  // 数字信封传入多个公钥，对同一个明文加密
+  rpc EncWithDeKWithPkList(DataEnvelopeEncryptWithPkListRequest) returns(DataEnvelopeEncryptWithPkListResponse){
+    option (google.api.http) = {
+      post: "/v1/EncWithDeKWithPkList"
+      body: "*"
+    };
+  };
+  // 根据公钥获取私钥
+  rpc GetSkFromPk(GetPrivateKeyRequest) returns(GetSkResponse){
+    option (google.api.http) = {
+      post: "/v1/GetSkFromPk"
+      body: "*"
+    };
+  };
+  // 根据 keyId 获取私钥
+  rpc GetSkFromKeyId(GetPrivateKeyRequest) returns(GetSkResponse){
+    option (google.api.http) = {
+      post: "/v1/GetSkFromKeyId"
+      body: "*"
+    };
+  };
+
+
+  ///////////////////////////
+  ////////数据库相关接口////////
+  //////////////////////////
+
+
+  // 根据 Id 获取task
+  rpc GetJobInstanceTask(GetJobInstanceTaskRequest) returns(GetJobInstanceTaskResponse){
+    option (google.api.http) = {
+      post: "/v1/GetJobInstanceTask"
+      body: "*"
+    };
+  };
+
+  // 根据 状态获取task
+  rpc GetJobInstanceTaskByStatus(GetJobInstanceTaskByStatusRequest) returns(GetJobInstanceTaskByStatusResponse){
+    option (google.api.http) = {
+      post: "/v1/GetJobInstanceTaskByStatus"
+      body: "*"
+    };
+  };
+
+  // 根据 状态获取task
+  rpc GetJobInstance(GetJobInstanceRequest) returns(GetJobInstanceResponse){
+    option (google.api.http) = {
+      post: "/v1/GetJobInstance"
+      body: "*"
+    };
+  };
+
+  // 根据实例id获取外部存储信息
+  rpc GetResultStorageConfig(GetResultStorageConfigRequest) returns(GetResultStorageConfigResponse){
+    option (google.api.http) = {
+      post: "/v1/GetResultStorageConfig"
+      body: "*"
+    };
+  };
+}
