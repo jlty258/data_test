@@ -70,8 +70,15 @@ func (m *DatabaseTypeMapper) generateFields(count int, fieldTypes []string, maxF
 	}
 
 	for i := 1; i < count; i++ {
-		// 从类型池中随机选择
-		fieldType := typePool[rand.Intn(len(typePool))]
+		var fieldType string
+		if len(fieldTypes) > 0 {
+			// 如果模板指定了字段类型，按照顺序循环使用
+			typeIndex := (i - 1) % len(typePool)
+			fieldType = typePool[typeIndex]
+		} else {
+			// 如果没有指定字段类型，从类型池中随机选择
+			fieldType = typePool[rand.Intn(len(typePool))]
+		}
 
 		// 计算MaxSize
 		maxSize := m.getMaxSizeForType(fieldType)

@@ -1,5 +1,5 @@
 # 多阶段构建：编译阶段
-FROM golang:1.23.0 as builder
+FROM golang:latest as builder
 
 # 配置Go依赖环境
 RUN go env -w GO111MODULE=on

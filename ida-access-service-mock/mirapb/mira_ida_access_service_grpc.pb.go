@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	MiraIdaAccess_GetPrivateDBConnInfo_FullMethodName        = "/mira.MiraIdaAccess/GetPrivateDBConnInfo"
 	MiraIdaAccess_GetPrivateAssetInfoByEnName_FullMethodName = "/mira.MiraIdaAccess/GetPrivateAssetInfoByEnName"
+	MiraIdaAccess_CreateDataSource_FullMethodName            = "/mira.MiraIdaAccess/CreateDataSource"
+	MiraIdaAccess_CreateAsset_FullMethodName                 = "/mira.MiraIdaAccess/CreateAsset"
 )
 
 // MiraIdaAccessClient is the client API for MiraIdaAccess service.
@@ -33,6 +35,10 @@ type MiraIdaAccessClient interface {
 	GetPrivateDBConnInfo(ctx context.Context, in *GetPrivateDBConnInfoRequest, opts ...grpc.CallOption) (*GetPrivateDBConnInfoResponse, error)
 	// 通过资产英文名称获取资产详情
 	GetPrivateAssetInfoByEnName(ctx context.Context, in *GetPrivateAssetInfoByEnNameRequest, opts ...grpc.CallOption) (*GetPrivateAssetInfoByEnNameResponse, error)
+	// 创建数据源
+	CreateDataSource(ctx context.Context, in *CreateDataSourceRequest, opts ...grpc.CallOption) (*CreateDataSourceResponse, error)
+	// 创建资产
+	CreateAsset(ctx context.Context, in *CreateAssetRequest, opts ...grpc.CallOption) (*CreateAssetResponse, error)
 }
 
 type miraIdaAccessClient struct {
@@ -63,6 +69,26 @@ func (c *miraIdaAccessClient) GetPrivateAssetInfoByEnName(ctx context.Context, i
 	return out, nil
 }
 
+func (c *miraIdaAccessClient) CreateDataSource(ctx context.Context, in *CreateDataSourceRequest, opts ...grpc.CallOption) (*CreateDataSourceResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateDataSourceResponse)
+	err := c.cc.Invoke(ctx, MiraIdaAccess_CreateDataSource_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *miraIdaAccessClient) CreateAsset(ctx context.Context, in *CreateAssetRequest, opts ...grpc.CallOption) (*CreateAssetResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateAssetResponse)
+	err := c.cc.Invoke(ctx, MiraIdaAccess_CreateAsset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MiraIdaAccessServer is the server API for MiraIdaAccess service.
 // All implementations must embed UnimplementedMiraIdaAccessServer
 // for forward compatibility.
@@ -73,6 +99,10 @@ type MiraIdaAccessServer interface {
 	GetPrivateDBConnInfo(context.Context, *GetPrivateDBConnInfoRequest) (*GetPrivateDBConnInfoResponse, error)
 	// 通过资产英文名称获取资产详情
 	GetPrivateAssetInfoByEnName(context.Context, *GetPrivateAssetInfoByEnNameRequest) (*GetPrivateAssetInfoByEnNameResponse, error)
+	// 创建数据源
+	CreateDataSource(context.Context, *CreateDataSourceRequest) (*CreateDataSourceResponse, error)
+	// 创建资产
+	CreateAsset(context.Context, *CreateAssetRequest) (*CreateAssetResponse, error)
 	mustEmbedUnimplementedMiraIdaAccessServer()
 }
 
@@ -88,6 +118,12 @@ func (UnimplementedMiraIdaAccessServer) GetPrivateDBConnInfo(context.Context, *G
 }
 func (UnimplementedMiraIdaAccessServer) GetPrivateAssetInfoByEnName(context.Context, *GetPrivateAssetInfoByEnNameRequest) (*GetPrivateAssetInfoByEnNameResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPrivateAssetInfoByEnName not implemented")
+}
+func (UnimplementedMiraIdaAccessServer) CreateDataSource(context.Context, *CreateDataSourceRequest) (*CreateDataSourceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateDataSource not implemented")
+}
+func (UnimplementedMiraIdaAccessServer) CreateAsset(context.Context, *CreateAssetRequest) (*CreateAssetResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateAsset not implemented")
 }
 func (UnimplementedMiraIdaAccessServer) mustEmbedUnimplementedMiraIdaAccessServer() {}
 func (UnimplementedMiraIdaAccessServer) testEmbeddedByValue()                       {}
@@ -146,6 +182,42 @@ func _MiraIdaAccess_GetPrivateAssetInfoByEnName_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MiraIdaAccess_CreateDataSource_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateDataSourceRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MiraIdaAccessServer).CreateDataSource(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MiraIdaAccess_CreateDataSource_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MiraIdaAccessServer).CreateDataSource(ctx, req.(*CreateDataSourceRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MiraIdaAccess_CreateAsset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateAssetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MiraIdaAccessServer).CreateAsset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MiraIdaAccess_CreateAsset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MiraIdaAccessServer).CreateAsset(ctx, req.(*CreateAssetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MiraIdaAccess_ServiceDesc is the grpc.ServiceDesc for MiraIdaAccess service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -160,6 +232,14 @@ var MiraIdaAccess_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPrivateAssetInfoByEnName",
 			Handler:    _MiraIdaAccess_GetPrivateAssetInfoByEnName_Handler,
+		},
+		{
+			MethodName: "CreateDataSource",
+			Handler:    _MiraIdaAccess_CreateDataSource_Handler,
+		},
+		{
+			MethodName: "CreateAsset",
+			Handler:    _MiraIdaAccess_CreateAsset_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

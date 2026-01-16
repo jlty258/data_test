@@ -241,7 +241,7 @@ func (x *Filter) GetValues() []string {
 	return nil
 }
 
-// 分页信息
+// 分页信息,未避免Pagination和Registration.Pagination重复定义，这里将Pagination改为PaginationCert
 type Pagination struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

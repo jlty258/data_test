@@ -75,6 +75,103 @@ message GetPrivateAssetInfoByEnNameResponse {
   AssetInfo data = 2;
 }
 
+// 创建数据源连接接口
+message CreateDataSourceRequest {
+  BaseRequest baseRequest = 1;
+  int32 dbPattern = 2;  // 数据库模式：1.关系型，2.非关系型
+  int32 dbType = 3;     // 数据库类型：1.mysql，2.kingbase，3.llm-hub, 4.TIDB, 5.TDSQL
+  string name = 4;      // 数据源名称
+  string host = 5;      // 数据源地址
+  int32 port = 6;       // 端口号
+  string username = 7;  // 数据库用户名
+  string password = 8;  // 数据库密码
+  string instanceName = 9; // 数据库名称
+  string llmHubToken = 10; // 连接 llm-hub 类型数据源的 token
+  string address = 11;  // 链帐户
+  string chainInfoId = 12; // 数据空间sid
+  int64 TenantId = 13;  // 租户id资源归属id
+  int64 Uin = 14;       // 用户唯一id
+}
+
+message CreateDataSourceResponse {
+  BaseResponse baseResponse = 1;
+  DataSourceId data = 2;
+}
+
+message DataSourceId {
+  int32 id = 1;
+}
+
+// 创建资产接口
+message CreateAssetRequest {
+  BaseRequest baseRequest = 1;
+  ChainInfo chainInfo = 2;        // 链空间、账户等相关信息
+  ResourceBasic resourceBasic = 3; // 资源基本信息
+  Table table = 4;                // 库表资源
+  File file = 5;                  // 文件资源
+}
+
+message ChainInfo {
+  string chainInfoId = 1;  // 链空间唯一标识
+  string address = 2;       // 链账户
+  string cid = 3;          // 连接器逻辑id
+}
+
+message ResourceBasic {
+  string resourceNumber = 1;  // 数据资源标识
+  string zhName = 2;          // 资源中文名
+  string enName = 3;          // 资源英文名
+  string description = 4;     // 资源描述
+  int32 scaleValue = 5;       // 数据规模值
+  int32 scaleUnit = 6;        // 数据规模单位，1-MB
+  string useLimit = 7;        // 使用限制
+  int32 type = 8;            // 资源类型，1-库表，2-文件
+  int32 dataType = 9;        // 数据类型，1-个人数据，2-企业数据，3-公共数据
+  string otherNote = 10;      // 其他说明
+  int32 authorized = 11;      // 是否需授权使用，1-不需要，2-需要
+  int32 machineLearning = 12; // 是否支持机器学习，1-不支持，2-支持
+}
+
+message Table {
+  int32 dataSourceId = 1;      // 数据源连接ID
+  string tableName = 2;         // 表名
+  repeated TableColumn columns = 3; // 字段列表
+}
+
+message TableColumn {
+  string originName = 1;    // 字段原始名称
+  string name = 2;          // 字段名称
+  string dataType = 3;      // 字段类型
+  int32 dataLength = 4;    // 字段长度
+  int32 primaryKey = 5;     // 是否为主键，1-否，2-是
+  int32 notNull = 6;        // 是否非空，1-否，2-是
+  string description = 7;   // 字段描述
+  int32 level = 8;         // 分级分类
+  string dataExample = 9;   // 数据示例
+}
+
+message File {
+  int32 dataSourceId = 1;      // 数据源连接ID
+  string path = 2;             // 文件路径
+  repeated FileItem files = 3; // 文件列表
+}
+
+message FileItem {
+  string name = 1;      // 文件名称
+  string size = 2;      // 文件大小
+  string updatedAt = 3; // 更新时间
+  int32 fileType = 4;   // 文件类型，1-文件，2-文件夹
+}
+
+message CreateAssetResponse {
+  BaseResponse baseResponse = 1;
+  ResourceId data = 2;
+}
+
+message ResourceId {
+  int32 id = 1;
+}
+
 // IDA Access Service 定义
 service MiraIdaAccess {
   // 获取包含隐私信息的数据源连接信息接口
@@ -82,5 +179,14 @@ service MiraIdaAccess {
   
   // 通过资产英文名称获取资产详情
   rpc GetPrivateAssetInfoByEnName(GetPrivateAssetInfoByEnNameRequest) returns (GetPrivateAssetInfoByEnNameResponse);
+  
+  // 创建数据源
+  rpc CreateDataSource(CreateDataSourceRequest) returns (CreateDataSourceResponse);
+  
+  // 创建资产
+  rpc CreateAsset(CreateAssetRequest) returns (CreateAssetResponse);
 }
+
+// 注意：需要重新运行 protoc 生成 Go 代码
+// protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/*.proto
 

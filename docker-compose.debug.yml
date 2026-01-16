@@ -1,0 +1,202 @@
+services:
+  # Mira Gateway Mock服务
+  mira-gateway-mock:
+    build:
+      context: ./mira-gateway-mock
+      dockerfile: Dockerfile
+    image: mira-gateway-mock:latest
+    container_name: mira-gateway-mock
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - mock-services
+
+  # IDA Access Service Mock服务
+  ida-access-service-mock:
+    build:
+      context: ./ida-access-service-mock
+      dockerfile: Dockerfile
+    image: ida-access-service-mock:latest
+    container_name: ida-access-service-mock
+    ports:
+      - "9091:9091"
+    environment:
+      - PORT=9091
+    restart: unless-stopped
+    networks:
+      - mock-services
+
+  # MinIO 对象存储服务
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    ports:
+      - "9000:9000"   # API 端口
+      - "9001:9001"   # Console 端口
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - mock-services
+
+  # Mira Data Service Server
+  mira-data-service-server:
+    build:
+      context: ./mira-data-service-server
+      dockerfile: Dockerfile
+    image: data-service:v3.2.0
+    container_name: mira-data-service-server
+    extra_hosts:
+      - "chainmaker.org:129.226.192.154"
+      - "chainweaver.org.cn:36.110.223.90"
+      - "git.chainweaver.org.cn:36.110.223.90"
+    ports:
+      - "9090:9090"  # gRPC 端口
+      - "8081:8080"  # HTTP 端口（改为 8081 避免与 gateway mock 冲突）
+    environment:
+      # Mock服务配置（使用docker服务名）
+      - MIRA_GATEWAY_HOST=mira-gateway-mock
+      - MIRA_GATEWAY_HOST_PORT=8080
+      - IDA_MANAGE_HOST=ida-access-service-mock
+      - IDA_MANAGE_PORT=9091
+      # 数据库配置（如果数据库在docker中，使用服务名；否则使用host.docker.internal）
+      - MYSQL_HOST=${MYSQL_HOST:-host.docker.internal}
+      - MYSQL_PORT=${MYSQL_PORT:-3306}
+      # OSS配置（使用docker服务名）
+      - MINIO_HOST=${MINIO_HOST:-minio}
+      - MINIO_PORT=${MINIO_PORT:-9000}
+    volumes:
+      # 挂载配置文件
+      - ./mira-data-service-server/server/config.yaml:/home/workspace/config/config.yaml:ro
+      # 如果需要挂载日志
+      - ./mira-data-service-server/logs:/home/workspace/logs
+    depends_on:
+      mira-gateway-mock:
+        condition: service_started
+      ida-access-service-mock:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mock-services
+
+  # Apache Doris FE (Frontend)
+  doris-fe:
+    image: apache/doris:fe-2.1.11
+    container_name: doris-fe
+    hostname: fe1
+    environment:
+      - FE_ID=1
+      # 强制 FE 监听在 Docker 给它分配的固定 IP 上
+      - FE_IP=172.20.0.10
+      - FE_SERVERS=fe1:172.20.0.10:9010
+      # 1. 强制网段，防止 BDB 扫描错网卡
+      - CONFIG_priority_networks=172.20.0.0/16
+      # 2. 核心：如果单机启动卡住，强制 BDB 认为自己是 Master
+      - CONFIG_metadata_failure_recovery=true
+      # 3. 避免解析主机名导致的慢启动
+      - CONFIG_enable_fqdn_mode=false
+      # JVM 内存配置
+      - JAVA_OPTS=-Xmx2048m -Xms2048m
+    ports:
+      - "8030:8030"  # HTTP 端口
+      - "9030:9030"  # MySQL 端口
+    volumes:
+      - doris-fe-meta:/opt/apache-doris/fe/doris-meta
+    networks:
+      mock-services:
+        ipv4_address: 172.20.0.10
+    healthcheck:
+      test: ["CMD", "bash", "-c", "timeout 1 bash -c '</dev/tcp/localhost/9030'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20  # 允许 FE 有较长的选举时间
+    restart: unless-stopped
+
+  # Apache Doris BE (Backend)
+  doris-be:
+    image: apache/doris:be-2.1.11
+    container_name: doris-be
+    hostname: be1
+    depends_on:
+      doris-fe:
+        condition: service_healthy
+    environment:
+      - FE_SERVERS=fe1:172.20.0.10:9010
+      - FE_QUERY_PORT=9030
+      - BE_ADDR=172.20.0.11:9050
+      - CONFIG_priority_networks=172.20.0.0/16
+    ports:
+      - "8040:8040"  # HTTP 端口
+    volumes:
+      - doris-be-storage:/opt/apache-doris/be/storage
+    networks:
+      mock-services:
+        ipv4_address: 172.20.0.11
+    restart: unless-stopped
+
+  # Data Integrate Test 服务
+  data-integrate-test:
+    build:
+      context: ./data-integrate-test
+      dockerfile: Dockerfile
+    image: data-integrate-test:latest
+    container_name: data-integrate-test
+    depends_on:
+      mira-data-service-server:
+        condition: service_started
+      ida-access-service-mock:
+        condition: service_started
+      doris-fe:
+        condition: service_healthy
+    environment:
+      - DATA_SERVICE_HOST=mira-data-service-server
+      - DATA_SERVICE_PORT=9090
+      - IDA_SERVICE_HOST=ida-access-service-mock
+      - IDA_SERVICE_PORT=9091
+      - MYSQL_HOST=doris-fe
+      - MYSQL_PORT=9030
+    volumes:
+      - ./data-integrate-test/config:/home/workspace/config:ro
+      - ./data-integrate-test/templates:/home/workspace/templates:ro
+    networks:
+      - mock-services
+    # 默认不启动，需要手动运行测试
+    profiles:
+      - test
+
+volumes:
+  minio-data:
+    driver: local
+  doris-fe-meta:
+    driver: local
+  doris-be-storage:
+    driver: local
+
+networks:
+  mock-services:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+

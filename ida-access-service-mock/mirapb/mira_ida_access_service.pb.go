@@ -9,6 +9,7 @@ package mirapb
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	mirapb "ida-access-service-mock/mirapb"
 	reflect "reflect"
 	sync "sync"
 )
@@ -200,7 +201,7 @@ type GetPrivateDBConnInfoResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	BaseResponse *BaseResponse             `protobuf:"bytes,1,opt,name=baseResponse,proto3" json:"baseResponse,omitempty"`
+	BaseResponse *mirapb.BaseResponse      `protobuf:"bytes,1,opt,name=baseResponse,proto3" json:"baseResponse,omitempty"`
 	Data         *GetPrivateDBConnInfoResp `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 }
 
@@ -236,7 +237,7 @@ func (*GetPrivateDBConnInfoResponse) Descriptor() ([]byte, []int) {
 	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *GetPrivateDBConnInfoResponse) GetBaseResponse() *BaseResponse {
+func (x *GetPrivateDBConnInfoResponse) GetBaseResponse() *mirapb.BaseResponse {
 	if x != nil {
 		return x.BaseResponse
 	}
@@ -256,8 +257,8 @@ type GetPrivateAssetInfoByEnNameRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	BaseRequest *BaseRequest `protobuf:"bytes,1,opt,name=baseRequest,proto3" json:"baseRequest,omitempty"`
-	AssetEnName string       `protobuf:"bytes,2,opt,name=assetEnName,proto3" json:"assetEnName,omitempty"` // 资产英文名称
+	BaseRequest *mirapb.BaseRequest `protobuf:"bytes,1,opt,name=baseRequest,proto3" json:"baseRequest,omitempty"`
+	AssetEnName string              `protobuf:"bytes,2,opt,name=assetEnName,proto3" json:"assetEnName,omitempty"` // 资产英文名称
 }
 
 func (x *GetPrivateAssetInfoByEnNameRequest) Reset() {
@@ -292,7 +293,7 @@ func (*GetPrivateAssetInfoByEnNameRequest) Descriptor() ([]byte, []int) {
 	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *GetPrivateAssetInfoByEnNameRequest) GetBaseRequest() *BaseRequest {
+func (x *GetPrivateAssetInfoByEnNameRequest) GetBaseRequest() *mirapb.BaseRequest {
 	if x != nil {
 		return x.BaseRequest
 	}
@@ -644,8 +645,8 @@ type GetPrivateAssetInfoByEnNameResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	BaseResponse *BaseResponse `protobuf:"bytes,1,opt,name=baseResponse,proto3" json:"baseResponse,omitempty"`
-	Data         *AssetInfo    `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+	BaseResponse *mirapb.BaseResponse `protobuf:"bytes,1,opt,name=baseResponse,proto3" json:"baseResponse,omitempty"`
+	Data         *AssetInfo           `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 }
 
 func (x *GetPrivateAssetInfoByEnNameResponse) Reset() {
@@ -680,7 +681,7 @@ func (*GetPrivateAssetInfoByEnNameResponse) Descriptor() ([]byte, []int) {
 	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *GetPrivateAssetInfoByEnNameResponse) GetBaseResponse() *BaseResponse {
+func (x *GetPrivateAssetInfoByEnNameResponse) GetBaseResponse() *mirapb.BaseResponse {
 	if x != nil {
 		return x.BaseResponse
 	}
@@ -692,6 +693,948 @@ func (x *GetPrivateAssetInfoByEnNameResponse) GetData() *AssetInfo {
 		return x.Data
 	}
 	return nil
+}
+
+// 创建数据源连接接口
+type CreateDataSourceRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BaseRequest  *mirapb.BaseRequest `protobuf:"bytes,1,opt,name=baseRequest,proto3" json:"baseRequest,omitempty"`
+	DbPattern    int32               `protobuf:"varint,2,opt,name=dbPattern,proto3" json:"dbPattern,omitempty"`      // 数据库模式：1.关系型，2.非关系型
+	DbType       int32               `protobuf:"varint,3,opt,name=dbType,proto3" json:"dbType,omitempty"`            // 数据库类型：1.mysql，2.kingbase，3.llm-hub, 4.TIDB, 5.TDSQL
+	Name         string              `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`                 // 数据源名称
+	Host         string              `protobuf:"bytes,5,opt,name=host,proto3" json:"host,omitempty"`                 // 数据源地址
+	Port         int32               `protobuf:"varint,6,opt,name=port,proto3" json:"port,omitempty"`                // 端口号
+	Username     string              `protobuf:"bytes,7,opt,name=username,proto3" json:"username,omitempty"`         // 数据库用户名
+	Password     string              `protobuf:"bytes,8,opt,name=password,proto3" json:"password,omitempty"`         // 数据库密码
+	InstanceName string              `protobuf:"bytes,9,opt,name=instanceName,proto3" json:"instanceName,omitempty"` // 数据库名称
+	LlmHubToken  string              `protobuf:"bytes,10,opt,name=llmHubToken,proto3" json:"llmHubToken,omitempty"`  // 连接 llm-hub 类型数据源的 token
+	Address      string              `protobuf:"bytes,11,opt,name=address,proto3" json:"address,omitempty"`          // 链帐户
+	ChainInfoId  string              `protobuf:"bytes,12,opt,name=chainInfoId,proto3" json:"chainInfoId,omitempty"`  // 数据空间sid
+	TenantId     int64               `protobuf:"varint,13,opt,name=TenantId,proto3" json:"TenantId,omitempty"`       // 租户id资源归属id
+	Uin          int64               `protobuf:"varint,14,opt,name=Uin,proto3" json:"Uin,omitempty"`                 // 用户唯一id
+}
+
+func (x *CreateDataSourceRequest) Reset() {
+	*x = CreateDataSourceRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateDataSourceRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateDataSourceRequest) ProtoMessage() {}
+
+func (x *CreateDataSourceRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateDataSourceRequest.ProtoReflect.Descriptor instead.
+func (*CreateDataSourceRequest) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *CreateDataSourceRequest) GetBaseRequest() *mirapb.BaseRequest {
+	if x != nil {
+		return x.BaseRequest
+	}
+	return nil
+}
+
+func (x *CreateDataSourceRequest) GetDbPattern() int32 {
+	if x != nil {
+		return x.DbPattern
+	}
+	return 0
+}
+
+func (x *CreateDataSourceRequest) GetDbType() int32 {
+	if x != nil {
+		return x.DbType
+	}
+	return 0
+}
+
+func (x *CreateDataSourceRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreateDataSourceRequest) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+func (x *CreateDataSourceRequest) GetPort() int32 {
+	if x != nil {
+		return x.Port
+	}
+	return 0
+}
+
+func (x *CreateDataSourceRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *CreateDataSourceRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
+func (x *CreateDataSourceRequest) GetInstanceName() string {
+	if x != nil {
+		return x.InstanceName
+	}
+	return ""
+}
+
+func (x *CreateDataSourceRequest) GetLlmHubToken() string {
+	if x != nil {
+		return x.LlmHubToken
+	}
+	return ""
+}
+
+func (x *CreateDataSourceRequest) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *CreateDataSourceRequest) GetChainInfoId() string {
+	if x != nil {
+		return x.ChainInfoId
+	}
+	return ""
+}
+
+func (x *CreateDataSourceRequest) GetTenantId() int64 {
+	if x != nil {
+		return x.TenantId
+	}
+	return 0
+}
+
+func (x *CreateDataSourceRequest) GetUin() int64 {
+	if x != nil {
+		return x.Uin
+	}
+	return 0
+}
+
+type CreateDataSourceResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BaseResponse *mirapb.BaseResponse `protobuf:"bytes,1,opt,name=baseResponse,proto3" json:"baseResponse,omitempty"`
+	Data         *DataSourceId        `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (x *CreateDataSourceResponse) Reset() {
+	*x = CreateDataSourceResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[9]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateDataSourceResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateDataSourceResponse) ProtoMessage() {}
+
+func (x *CreateDataSourceResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[9]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateDataSourceResponse.ProtoReflect.Descriptor instead.
+func (*CreateDataSourceResponse) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CreateDataSourceResponse) GetBaseResponse() *mirapb.BaseResponse {
+	if x != nil {
+		return x.BaseResponse
+	}
+	return nil
+}
+
+func (x *CreateDataSourceResponse) GetData() *DataSourceId {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type DataSourceId struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Id int32 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+}
+
+func (x *DataSourceId) Reset() {
+	*x = DataSourceId{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[10]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *DataSourceId) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DataSourceId) ProtoMessage() {}
+
+func (x *DataSourceId) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[10]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DataSourceId.ProtoReflect.Descriptor instead.
+func (*DataSourceId) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *DataSourceId) GetId() int32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+// 创建资产接口
+type CreateAssetRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BaseRequest   *mirapb.BaseRequest `protobuf:"bytes,1,opt,name=baseRequest,proto3" json:"baseRequest,omitempty"`
+	ChainInfo     *ChainInfo          `protobuf:"bytes,2,opt,name=chainInfo,proto3" json:"chainInfo,omitempty"`         // 链空间、账户等相关信息
+	ResourceBasic *ResourceBasic      `protobuf:"bytes,3,opt,name=resourceBasic,proto3" json:"resourceBasic,omitempty"` // 资源基本信息
+	Table         *Table              `protobuf:"bytes,4,opt,name=table,proto3" json:"table,omitempty"`                 // 库表资源
+	File          *File               `protobuf:"bytes,5,opt,name=file,proto3" json:"file,omitempty"`                   // 文件资源
+}
+
+func (x *CreateAssetRequest) Reset() {
+	*x = CreateAssetRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[11]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateAssetRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateAssetRequest) ProtoMessage() {}
+
+func (x *CreateAssetRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[11]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateAssetRequest.ProtoReflect.Descriptor instead.
+func (*CreateAssetRequest) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *CreateAssetRequest) GetBaseRequest() *mirapb.BaseRequest {
+	if x != nil {
+		return x.BaseRequest
+	}
+	return nil
+}
+
+func (x *CreateAssetRequest) GetChainInfo() *ChainInfo {
+	if x != nil {
+		return x.ChainInfo
+	}
+	return nil
+}
+
+func (x *CreateAssetRequest) GetResourceBasic() *ResourceBasic {
+	if x != nil {
+		return x.ResourceBasic
+	}
+	return nil
+}
+
+func (x *CreateAssetRequest) GetTable() *Table {
+	if x != nil {
+		return x.Table
+	}
+	return nil
+}
+
+func (x *CreateAssetRequest) GetFile() *File {
+	if x != nil {
+		return x.File
+	}
+	return nil
+}
+
+type ChainInfo struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ChainInfoId string `protobuf:"bytes,1,opt,name=chainInfoId,proto3" json:"chainInfoId,omitempty"` // 链空间唯一标识
+	Address     string `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`         // 链账户
+	Cid         string `protobuf:"bytes,3,opt,name=cid,proto3" json:"cid,omitempty"`                 // 连接器逻辑id
+}
+
+func (x *ChainInfo) Reset() {
+	*x = ChainInfo{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ChainInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChainInfo) ProtoMessage() {}
+
+func (x *ChainInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChainInfo.ProtoReflect.Descriptor instead.
+func (*ChainInfo) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ChainInfo) GetChainInfoId() string {
+	if x != nil {
+		return x.ChainInfoId
+	}
+	return ""
+}
+
+func (x *ChainInfo) GetAddress() string {
+	if x != nil {
+		return x.Address
+	}
+	return ""
+}
+
+func (x *ChainInfo) GetCid() string {
+	if x != nil {
+		return x.Cid
+	}
+	return ""
+}
+
+type ResourceBasic struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ResourceNumber  string `protobuf:"bytes,1,opt,name=resourceNumber,proto3" json:"resourceNumber,omitempty"`     // 数据资源标识
+	ZhName          string `protobuf:"bytes,2,opt,name=zhName,proto3" json:"zhName,omitempty"`                     // 资源中文名
+	EnName          string `protobuf:"bytes,3,opt,name=enName,proto3" json:"enName,omitempty"`                     // 资源英文名
+	Description     string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`           // 资源描述
+	ScaleValue      int32  `protobuf:"varint,5,opt,name=scaleValue,proto3" json:"scaleValue,omitempty"`            // 数据规模值
+	ScaleUnit       int32  `protobuf:"varint,6,opt,name=scaleUnit,proto3" json:"scaleUnit,omitempty"`              // 数据规模单位，1-MB
+	UseLimit        string `protobuf:"bytes,7,opt,name=useLimit,proto3" json:"useLimit,omitempty"`                 // 使用限制
+	Type            int32  `protobuf:"varint,8,opt,name=type,proto3" json:"type,omitempty"`                        // 资源类型，1-库表，2-文件
+	DataType        int32  `protobuf:"varint,9,opt,name=dataType,proto3" json:"dataType,omitempty"`                // 数据类型，1-个人数据，2-企业数据，3-公共数据
+	OtherNote       string `protobuf:"bytes,10,opt,name=otherNote,proto3" json:"otherNote,omitempty"`              // 其他说明
+	Authorized      int32  `protobuf:"varint,11,opt,name=authorized,proto3" json:"authorized,omitempty"`           // 是否需授权使用，1-不需要，2-需要
+	MachineLearning int32  `protobuf:"varint,12,opt,name=machineLearning,proto3" json:"machineLearning,omitempty"` // 是否支持机器学习，1-不支持，2-支持
+}
+
+func (x *ResourceBasic) Reset() {
+	*x = ResourceBasic{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ResourceBasic) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResourceBasic) ProtoMessage() {}
+
+func (x *ResourceBasic) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResourceBasic.ProtoReflect.Descriptor instead.
+func (*ResourceBasic) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ResourceBasic) GetResourceNumber() string {
+	if x != nil {
+		return x.ResourceNumber
+	}
+	return ""
+}
+
+func (x *ResourceBasic) GetZhName() string {
+	if x != nil {
+		return x.ZhName
+	}
+	return ""
+}
+
+func (x *ResourceBasic) GetEnName() string {
+	if x != nil {
+		return x.EnName
+	}
+	return ""
+}
+
+func (x *ResourceBasic) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ResourceBasic) GetScaleValue() int32 {
+	if x != nil {
+		return x.ScaleValue
+	}
+	return 0
+}
+
+func (x *ResourceBasic) GetScaleUnit() int32 {
+	if x != nil {
+		return x.ScaleUnit
+	}
+	return 0
+}
+
+func (x *ResourceBasic) GetUseLimit() string {
+	if x != nil {
+		return x.UseLimit
+	}
+	return ""
+}
+
+func (x *ResourceBasic) GetType() int32 {
+	if x != nil {
+		return x.Type
+	}
+	return 0
+}
+
+func (x *ResourceBasic) GetDataType() int32 {
+	if x != nil {
+		return x.DataType
+	}
+	return 0
+}
+
+func (x *ResourceBasic) GetOtherNote() string {
+	if x != nil {
+		return x.OtherNote
+	}
+	return ""
+}
+
+func (x *ResourceBasic) GetAuthorized() int32 {
+	if x != nil {
+		return x.Authorized
+	}
+	return 0
+}
+
+func (x *ResourceBasic) GetMachineLearning() int32 {
+	if x != nil {
+		return x.MachineLearning
+	}
+	return 0
+}
+
+type Table struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	DataSourceId int32          `protobuf:"varint,1,opt,name=dataSourceId,proto3" json:"dataSourceId,omitempty"` // 数据源连接ID
+	TableName    string         `protobuf:"bytes,2,opt,name=tableName,proto3" json:"tableName,omitempty"`        // 表名
+	Columns      []*TableColumn `protobuf:"bytes,3,rep,name=columns,proto3" json:"columns,omitempty"`            // 字段列表
+}
+
+func (x *Table) Reset() {
+	*x = Table{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *Table) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Table) ProtoMessage() {}
+
+func (x *Table) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Table.ProtoReflect.Descriptor instead.
+func (*Table) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *Table) GetDataSourceId() int32 {
+	if x != nil {
+		return x.DataSourceId
+	}
+	return 0
+}
+
+func (x *Table) GetTableName() string {
+	if x != nil {
+		return x.TableName
+	}
+	return ""
+}
+
+func (x *Table) GetColumns() []*TableColumn {
+	if x != nil {
+		return x.Columns
+	}
+	return nil
+}
+
+type TableColumn struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	OriginName  string `protobuf:"bytes,1,opt,name=originName,proto3" json:"originName,omitempty"`   // 字段原始名称
+	Name        string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`               // 字段名称
+	DataType    string `protobuf:"bytes,3,opt,name=dataType,proto3" json:"dataType,omitempty"`       // 字段类型
+	DataLength  int32  `protobuf:"varint,4,opt,name=dataLength,proto3" json:"dataLength,omitempty"`  // 字段长度
+	PrimaryKey  int32  `protobuf:"varint,5,opt,name=primaryKey,proto3" json:"primaryKey,omitempty"`  // 是否为主键，1-否，2-是
+	NotNull     int32  `protobuf:"varint,6,opt,name=notNull,proto3" json:"notNull,omitempty"`        // 是否非空，1-否，2-是
+	Description string `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"` // 字段描述
+	Level       int32  `protobuf:"varint,8,opt,name=level,proto3" json:"level,omitempty"`            // 分级分类
+	DataExample string `protobuf:"bytes,9,opt,name=dataExample,proto3" json:"dataExample,omitempty"` // 数据示例
+}
+
+func (x *TableColumn) Reset() {
+	*x = TableColumn{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *TableColumn) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TableColumn) ProtoMessage() {}
+
+func (x *TableColumn) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TableColumn.ProtoReflect.Descriptor instead.
+func (*TableColumn) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *TableColumn) GetOriginName() string {
+	if x != nil {
+		return x.OriginName
+	}
+	return ""
+}
+
+func (x *TableColumn) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *TableColumn) GetDataType() string {
+	if x != nil {
+		return x.DataType
+	}
+	return ""
+}
+
+func (x *TableColumn) GetDataLength() int32 {
+	if x != nil {
+		return x.DataLength
+	}
+	return 0
+}
+
+func (x *TableColumn) GetPrimaryKey() int32 {
+	if x != nil {
+		return x.PrimaryKey
+	}
+	return 0
+}
+
+func (x *TableColumn) GetNotNull() int32 {
+	if x != nil {
+		return x.NotNull
+	}
+	return 0
+}
+
+func (x *TableColumn) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *TableColumn) GetLevel() int32 {
+	if x != nil {
+		return x.Level
+	}
+	return 0
+}
+
+func (x *TableColumn) GetDataExample() string {
+	if x != nil {
+		return x.DataExample
+	}
+	return ""
+}
+
+type File struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	DataSourceId int32       `protobuf:"varint,1,opt,name=dataSourceId,proto3" json:"dataSourceId,omitempty"` // 数据源连接ID
+	Path         string      `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`                  // 文件路径
+	Files        []*FileItem `protobuf:"bytes,3,rep,name=files,proto3" json:"files,omitempty"`                // 文件列表
+}
+
+func (x *File) Reset() {
+	*x = File{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *File) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*File) ProtoMessage() {}
+
+func (x *File) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use File.ProtoReflect.Descriptor instead.
+func (*File) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *File) GetDataSourceId() int32 {
+	if x != nil {
+		return x.DataSourceId
+	}
+	return 0
+}
+
+func (x *File) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *File) GetFiles() []*FileItem {
+	if x != nil {
+		return x.Files
+	}
+	return nil
+}
+
+type FileItem struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Name      string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`           // 文件名称
+	Size      string `protobuf:"bytes,2,opt,name=size,proto3" json:"size,omitempty"`           // 文件大小
+	UpdatedAt string `protobuf:"bytes,3,opt,name=updatedAt,proto3" json:"updatedAt,omitempty"` // 更新时间
+	FileType  int32  `protobuf:"varint,4,opt,name=fileType,proto3" json:"fileType,omitempty"`  // 文件类型，1-文件，2-文件夹
+}
+
+func (x *FileItem) Reset() {
+	*x = FileItem{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *FileItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileItem) ProtoMessage() {}
+
+func (x *FileItem) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileItem.ProtoReflect.Descriptor instead.
+func (*FileItem) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *FileItem) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *FileItem) GetSize() string {
+	if x != nil {
+		return x.Size
+	}
+	return ""
+}
+
+func (x *FileItem) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *FileItem) GetFileType() int32 {
+	if x != nil {
+		return x.FileType
+	}
+	return 0
+}
+
+type CreateAssetResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	BaseResponse *mirapb.BaseResponse `protobuf:"bytes,1,opt,name=baseResponse,proto3" json:"baseResponse,omitempty"`
+	Data         *ResourceId          `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (x *CreateAssetResponse) Reset() {
+	*x = CreateAssetResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *CreateAssetResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateAssetResponse) ProtoMessage() {}
+
+func (x *CreateAssetResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateAssetResponse.ProtoReflect.Descriptor instead.
+func (*CreateAssetResponse) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *CreateAssetResponse) GetBaseResponse() *mirapb.BaseResponse {
+	if x != nil {
+		return x.BaseResponse
+	}
+	return nil
+}
+
+func (x *CreateAssetResponse) GetData() *ResourceId {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
+type ResourceId struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Id int32 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+}
+
+func (x *ResourceId) Reset() {
+	*x = ResourceId{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_proto_mira_ida_access_service_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ResourceId) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResourceId) ProtoMessage() {}
+
+func (x *ResourceId) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_mira_ida_access_service_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResourceId.ProtoReflect.Descriptor instead.
+func (*ResourceId) Descriptor() ([]byte, []int) {
+	return file_proto_mira_ida_access_service_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ResourceId) GetId() int32 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
 }
 
 var File_proto_mira_ida_access_service_proto protoreflect.FileDescriptor
@@ -806,23 +1749,161 @@ var file_proto_mira_ida_access_service_proto_rawDesc = []byte{
 	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0c, 0x62, 0x61, 0x73, 0x65, 0x52, 0x65, 0x73,
 	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x23, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20,
 	0x01, 0x28, 0x0b, 0x32, 0x0f, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x41, 0x73, 0x73, 0x65, 0x74,
-	0x49, 0x6e, 0x66, 0x6f, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x32, 0xe2, 0x01, 0x0a, 0x0d, 0x4d,
-	0x69, 0x72, 0x61, 0x49, 0x64, 0x61, 0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x5d, 0x0a, 0x14,
-	0x47, 0x65, 0x74, 0x50, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x44, 0x42, 0x43, 0x6f, 0x6e, 0x6e,
-	0x49, 0x6e, 0x66, 0x6f, 0x12, 0x21, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x47, 0x65, 0x74, 0x50,
+	0x49, 0x6e, 0x66, 0x6f, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0xa8, 0x03, 0x0a, 0x17, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x33, 0x0a, 0x0b, 0x62, 0x61, 0x73, 0x65, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e, 0x6d, 0x69,
+	0x72, 0x61, 0x2e, 0x42, 0x61, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x52, 0x0b,
+	0x62, 0x61, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1c, 0x0a, 0x09, 0x64,
+	0x62, 0x50, 0x61, 0x74, 0x74, 0x65, 0x72, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x09,
+	0x64, 0x62, 0x50, 0x61, 0x74, 0x74, 0x65, 0x72, 0x6e, 0x12, 0x16, 0x0a, 0x06, 0x64, 0x62, 0x54,
+	0x79, 0x70, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x52, 0x06, 0x64, 0x62, 0x54, 0x79, 0x70,
+	0x65, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x18, 0x05, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x04, 0x68, 0x6f, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x6f, 0x72,
+	0x74, 0x18, 0x06, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x1a, 0x0a,
+	0x08, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x08, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x1a, 0x0a, 0x08, 0x70, 0x61, 0x73,
+	0x73, 0x77, 0x6f, 0x72, 0x64, 0x18, 0x08, 0x20, 0x01, 0x28, 0x09, 0x52, 0x08, 0x70, 0x61, 0x73,
+	0x73, 0x77, 0x6f, 0x72, 0x64, 0x12, 0x22, 0x0a, 0x0c, 0x69, 0x6e, 0x73, 0x74, 0x61, 0x6e, 0x63,
+	0x65, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x69, 0x6e, 0x73,
+	0x74, 0x61, 0x6e, 0x63, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x20, 0x0a, 0x0b, 0x6c, 0x6c, 0x6d,
+	0x48, 0x75, 0x62, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b,
+	0x6c, 0x6c, 0x6d, 0x48, 0x75, 0x62, 0x54, 0x6f, 0x6b, 0x65, 0x6e, 0x12, 0x18, 0x0a, 0x07, 0x61,
+	0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64,
+	0x64, 0x72, 0x65, 0x73, 0x73, 0x12, 0x20, 0x0a, 0x0b, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x6e,
+	0x66, 0x6f, 0x49, 0x64, 0x18, 0x0c, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x63, 0x68, 0x61, 0x69,
+	0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x49, 0x64, 0x12, 0x1a, 0x0a, 0x08, 0x54, 0x65, 0x6e, 0x61, 0x6e,
+	0x74, 0x49, 0x64, 0x18, 0x0d, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x54, 0x65, 0x6e, 0x61, 0x6e,
+	0x74, 0x49, 0x64, 0x12, 0x10, 0x0a, 0x03, 0x55, 0x69, 0x6e, 0x18, 0x0e, 0x20, 0x01, 0x28, 0x03,
+	0x52, 0x03, 0x55, 0x69, 0x6e, 0x22, 0x7a, 0x0a, 0x18, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x44,
+	0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x12, 0x36, 0x0a, 0x0c, 0x62, 0x61, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x42,
+	0x61, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0c, 0x62, 0x61, 0x73,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x26, 0x0a, 0x04, 0x64, 0x61, 0x74,
+	0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x12, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x44,
+	0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64, 0x52, 0x04, 0x64, 0x61, 0x74,
+	0x61, 0x22, 0x1e, 0x0a, 0x0c, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49,
+	0x64, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x02, 0x69,
+	0x64, 0x22, 0xf6, 0x01, 0x0a, 0x12, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x33, 0x0a, 0x0b, 0x62, 0x61, 0x73, 0x65,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x11, 0x2e,
+	0x6d, 0x69, 0x72, 0x61, 0x2e, 0x42, 0x61, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x52, 0x0b, 0x62, 0x61, 0x73, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x2d, 0x0a,
+	0x09, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x0f, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x43, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x6e, 0x66,
+	0x6f, 0x52, 0x09, 0x63, 0x68, 0x61, 0x69, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x39, 0x0a, 0x0d,
+	0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x42, 0x61, 0x73, 0x69, 0x63, 0x18, 0x03, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x42, 0x61, 0x73, 0x69, 0x63, 0x52, 0x0d, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x42, 0x61, 0x73, 0x69, 0x63, 0x12, 0x21, 0x0a, 0x05, 0x74, 0x61, 0x62, 0x6c, 0x65,
+	0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0b, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x54, 0x61,
+	0x62, 0x6c, 0x65, 0x52, 0x05, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x1e, 0x0a, 0x04, 0x66, 0x69,
+	0x6c, 0x65, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x0a, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e,
+	0x46, 0x69, 0x6c, 0x65, 0x52, 0x04, 0x66, 0x69, 0x6c, 0x65, 0x22, 0x59, 0x0a, 0x09, 0x43, 0x68,
+	0x61, 0x69, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x20, 0x0a, 0x0b, 0x63, 0x68, 0x61, 0x69, 0x6e,
+	0x49, 0x6e, 0x66, 0x6f, 0x49, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x63, 0x68,
+	0x61, 0x69, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x49, 0x64, 0x12, 0x18, 0x0a, 0x07, 0x61, 0x64, 0x64,
+	0x72, 0x65, 0x73, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x61, 0x64, 0x64, 0x72,
+	0x65, 0x73, 0x73, 0x12, 0x10, 0x0a, 0x03, 0x63, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x03, 0x63, 0x69, 0x64, 0x22, 0xfb, 0x02, 0x0a, 0x0d, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72,
+	0x63, 0x65, 0x42, 0x61, 0x73, 0x69, 0x63, 0x12, 0x26, 0x0a, 0x0e, 0x72, 0x65, 0x73, 0x6f, 0x75,
+	0x72, 0x63, 0x65, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0e, 0x72, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x4e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x12,
+	0x16, 0x0a, 0x06, 0x7a, 0x68, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x06, 0x7a, 0x68, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x6e, 0x4e, 0x61, 0x6d,
+	0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x65, 0x6e, 0x4e, 0x61, 0x6d, 0x65, 0x12,
+	0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x69, 0x6f,
+	0x6e, 0x12, 0x1e, 0x0a, 0x0a, 0x73, 0x63, 0x61, 0x6c, 0x65, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x18,
+	0x05, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x73, 0x63, 0x61, 0x6c, 0x65, 0x56, 0x61, 0x6c, 0x75,
+	0x65, 0x12, 0x1c, 0x0a, 0x09, 0x73, 0x63, 0x61, 0x6c, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x18, 0x06,
+	0x20, 0x01, 0x28, 0x05, 0x52, 0x09, 0x73, 0x63, 0x61, 0x6c, 0x65, 0x55, 0x6e, 0x69, 0x74, 0x12,
+	0x1a, 0x0a, 0x08, 0x75, 0x73, 0x65, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x08, 0x75, 0x73, 0x65, 0x4c, 0x69, 0x6d, 0x69, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x74,
+	0x79, 0x70, 0x65, 0x18, 0x08, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12,
+	0x1a, 0x0a, 0x08, 0x64, 0x61, 0x74, 0x61, 0x54, 0x79, 0x70, 0x65, 0x18, 0x09, 0x20, 0x01, 0x28,
+	0x05, 0x52, 0x08, 0x64, 0x61, 0x74, 0x61, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x6f,
+	0x74, 0x68, 0x65, 0x72, 0x4e, 0x6f, 0x74, 0x65, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09,
+	0x6f, 0x74, 0x68, 0x65, 0x72, 0x4e, 0x6f, 0x74, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x61, 0x75, 0x74,
+	0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x18, 0x0b, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0a, 0x61,
+	0x75, 0x74, 0x68, 0x6f, 0x72, 0x69, 0x7a, 0x65, 0x64, 0x12, 0x28, 0x0a, 0x0f, 0x6d, 0x61, 0x63,
+	0x68, 0x69, 0x6e, 0x65, 0x4c, 0x65, 0x61, 0x72, 0x6e, 0x69, 0x6e, 0x67, 0x18, 0x0c, 0x20, 0x01,
+	0x28, 0x05, 0x52, 0x0f, 0x6d, 0x61, 0x63, 0x68, 0x69, 0x6e, 0x65, 0x4c, 0x65, 0x61, 0x72, 0x6e,
+	0x69, 0x6e, 0x67, 0x22, 0x76, 0x0a, 0x05, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x12, 0x22, 0x0a, 0x0c,
+	0x64, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x05, 0x52, 0x0c, 0x64, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64,
+	0x12, 0x1c, 0x0a, 0x09, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x09, 0x74, 0x61, 0x62, 0x6c, 0x65, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x2b,
+	0x0a, 0x07, 0x63, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32,
+	0x11, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x54, 0x61, 0x62, 0x6c, 0x65, 0x43, 0x6f, 0x6c, 0x75,
+	0x6d, 0x6e, 0x52, 0x07, 0x63, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x73, 0x22, 0x91, 0x02, 0x0a, 0x0b,
+	0x54, 0x61, 0x62, 0x6c, 0x65, 0x43, 0x6f, 0x6c, 0x75, 0x6d, 0x6e, 0x12, 0x1e, 0x0a, 0x0a, 0x6f,
+	0x72, 0x69, 0x67, 0x69, 0x6e, 0x4e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x0a, 0x6f, 0x72, 0x69, 0x67, 0x69, 0x6e, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x6e,
+	0x61, 0x6d, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12,
+	0x1a, 0x0a, 0x08, 0x64, 0x61, 0x74, 0x61, 0x54, 0x79, 0x70, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x08, 0x64, 0x61, 0x74, 0x61, 0x54, 0x79, 0x70, 0x65, 0x12, 0x1e, 0x0a, 0x0a, 0x64,
+	0x61, 0x74, 0x61, 0x4c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x52,
+	0x0a, 0x64, 0x61, 0x74, 0x61, 0x4c, 0x65, 0x6e, 0x67, 0x74, 0x68, 0x12, 0x1e, 0x0a, 0x0a, 0x70,
+	0x72, 0x69, 0x6d, 0x61, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x18, 0x05, 0x20, 0x01, 0x28, 0x05, 0x52,
+	0x0a, 0x70, 0x72, 0x69, 0x6d, 0x61, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x12, 0x18, 0x0a, 0x07, 0x6e,
+	0x6f, 0x74, 0x4e, 0x75, 0x6c, 0x6c, 0x18, 0x06, 0x20, 0x01, 0x28, 0x05, 0x52, 0x07, 0x6e, 0x6f,
+	0x74, 0x4e, 0x75, 0x6c, 0x6c, 0x12, 0x20, 0x0a, 0x0b, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70,
+	0x74, 0x69, 0x6f, 0x6e, 0x18, 0x07, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x64, 0x65, 0x73, 0x63,
+	0x72, 0x69, 0x70, 0x74, 0x69, 0x6f, 0x6e, 0x12, 0x14, 0x0a, 0x05, 0x6c, 0x65, 0x76, 0x65, 0x6c,
+	0x18, 0x08, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x6c, 0x65, 0x76, 0x65, 0x6c, 0x12, 0x20, 0x0a,
+	0x0b, 0x64, 0x61, 0x74, 0x61, 0x45, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x18, 0x09, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x0b, 0x64, 0x61, 0x74, 0x61, 0x45, 0x78, 0x61, 0x6d, 0x70, 0x6c, 0x65, 0x22,
+	0x64, 0x0a, 0x04, 0x46, 0x69, 0x6c, 0x65, 0x12, 0x22, 0x0a, 0x0c, 0x64, 0x61, 0x74, 0x61, 0x53,
+	0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0c, 0x64,
+	0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x49, 0x64, 0x12, 0x12, 0x0a, 0x04, 0x70,
+	0x61, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74, 0x68, 0x12,
+	0x24, 0x0a, 0x05, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0e,
+	0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x46, 0x69, 0x6c, 0x65, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x05,
+	0x66, 0x69, 0x6c, 0x65, 0x73, 0x22, 0x6c, 0x0a, 0x08, 0x46, 0x69, 0x6c, 0x65, 0x49, 0x74, 0x65,
+	0x6d, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x04, 0x73, 0x69, 0x7a, 0x65, 0x12, 0x1c, 0x0a, 0x09, 0x75, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x09, 0x75, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x64, 0x41, 0x74, 0x12, 0x1a, 0x0a, 0x08, 0x66, 0x69, 0x6c, 0x65, 0x54,
+	0x79, 0x70, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x05, 0x52, 0x08, 0x66, 0x69, 0x6c, 0x65, 0x54,
+	0x79, 0x70, 0x65, 0x22, 0x73, 0x0a, 0x13, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73,
+	0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x36, 0x0a, 0x0c, 0x62, 0x61,
+	0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x12, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x42, 0x61, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x52, 0x0c, 0x62, 0x61, 0x73, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x12, 0x24, 0x0a, 0x04, 0x64, 0x61, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x10, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65,
+	0x49, 0x64, 0x52, 0x04, 0x64, 0x61, 0x74, 0x61, 0x22, 0x1c, 0x0a, 0x0a, 0x52, 0x65, 0x73, 0x6f,
+	0x75, 0x72, 0x63, 0x65, 0x49, 0x64, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x05, 0x52, 0x02, 0x69, 0x64, 0x32, 0xf9, 0x02, 0x0a, 0x0d, 0x4d, 0x69, 0x72, 0x61, 0x49,
+	0x64, 0x61, 0x41, 0x63, 0x63, 0x65, 0x73, 0x73, 0x12, 0x5d, 0x0a, 0x14, 0x47, 0x65, 0x74, 0x50,
 	0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x44, 0x42, 0x43, 0x6f, 0x6e, 0x6e, 0x49, 0x6e, 0x66, 0x6f,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x47,
-	0x65, 0x74, 0x50, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x44, 0x42, 0x43, 0x6f, 0x6e, 0x6e, 0x49,
-	0x6e, 0x66, 0x6f, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x72, 0x0a, 0x1b, 0x47,
-	0x65, 0x74, 0x50, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x49, 0x6e,
-	0x66, 0x6f, 0x42, 0x79, 0x45, 0x6e, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x28, 0x2e, 0x6d, 0x69, 0x72,
-	0x61, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65,
-	0x74, 0x49, 0x6e, 0x66, 0x6f, 0x42, 0x79, 0x45, 0x6e, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x1a, 0x29, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x47, 0x65, 0x74, 0x50,
-	0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x42,
-	0x79, 0x45, 0x6e, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42,
-	0x0a, 0x5a, 0x08, 0x2e, 0x2f, 0x6d, 0x69, 0x72, 0x61, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x33,
+	0x12, 0x21, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72, 0x69, 0x76, 0x61,
+	0x74, 0x65, 0x44, 0x42, 0x43, 0x6f, 0x6e, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x1a, 0x22, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72,
+	0x69, 0x76, 0x61, 0x74, 0x65, 0x44, 0x42, 0x43, 0x6f, 0x6e, 0x6e, 0x49, 0x6e, 0x66, 0x6f, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x72, 0x0a, 0x1b, 0x47, 0x65, 0x74, 0x50, 0x72,
+	0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x42, 0x79,
+	0x45, 0x6e, 0x4e, 0x61, 0x6d, 0x65, 0x12, 0x28, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x47, 0x65,
+	0x74, 0x50, 0x72, 0x69, 0x76, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x49, 0x6e, 0x66,
+	0x6f, 0x42, 0x79, 0x45, 0x6e, 0x4e, 0x61, 0x6d, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
+	0x1a, 0x29, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x47, 0x65, 0x74, 0x50, 0x72, 0x69, 0x76, 0x61,
+	0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x49, 0x6e, 0x66, 0x6f, 0x42, 0x79, 0x45, 0x6e, 0x4e,
+	0x61, 0x6d, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x51, 0x0a, 0x10, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12,
+	0x1d, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x61, 0x74,
+	0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e,
+	0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x44, 0x61, 0x74, 0x61,
+	0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x42,
+	0x0a, 0x0b, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x12, 0x18, 0x2e,
+	0x6d, 0x69, 0x72, 0x61, 0x2e, 0x43, 0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74,
+	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x6d, 0x69, 0x72, 0x61, 0x2e, 0x43,
+	0x72, 0x65, 0x61, 0x74, 0x65, 0x41, 0x73, 0x73, 0x65, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
+	0x73, 0x65, 0x42, 0x0a, 0x5a, 0x08, 0x2e, 0x2f, 0x6d, 0x69, 0x72, 0x61, 0x70, 0x62, 0x62, 0x06,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -837,7 +1918,7 @@ func file_proto_mira_ida_access_service_proto_rawDescGZIP() []byte {
 	return file_proto_mira_ida_access_service_proto_rawDescData
 }
 
-var file_proto_mira_ida_access_service_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_proto_mira_ida_access_service_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_proto_mira_ida_access_service_proto_goTypes = []any{
 	(*GetPrivateDBConnInfoRequest)(nil),         // 0: mira.GetPrivateDBConnInfoRequest
 	(*GetPrivateDBConnInfoResp)(nil),            // 1: mira.GetPrivateDBConnInfoResp
@@ -847,26 +1928,54 @@ var file_proto_mira_ida_access_service_proto_goTypes = []any{
 	(*DataInfo)(nil),                            // 5: mira.DataInfo
 	(*SaveTableColumnItem)(nil),                 // 6: mira.SaveTableColumnItem
 	(*GetPrivateAssetInfoByEnNameResponse)(nil), // 7: mira.GetPrivateAssetInfoByEnNameResponse
-	(*BaseResponse)(nil),                        // 8: mira.BaseResponse
-	(*BaseRequest)(nil),                         // 9: mira.BaseRequest
+	(*CreateDataSourceRequest)(nil),             // 8: mira.CreateDataSourceRequest
+	(*CreateDataSourceResponse)(nil),            // 9: mira.CreateDataSourceResponse
+	(*DataSourceId)(nil),                        // 10: mira.DataSourceId
+	(*CreateAssetRequest)(nil),                  // 11: mira.CreateAssetRequest
+	(*ChainInfo)(nil),                           // 12: mira.ChainInfo
+	(*ResourceBasic)(nil),                       // 13: mira.ResourceBasic
+	(*Table)(nil),                               // 14: mira.Table
+	(*TableColumn)(nil),                         // 15: mira.TableColumn
+	(*File)(nil),                                // 16: mira.File
+	(*FileItem)(nil),                            // 17: mira.FileItem
+	(*CreateAssetResponse)(nil),                 // 18: mira.CreateAssetResponse
+	(*ResourceId)(nil),                          // 19: mira.ResourceId
+	(*mirapb.BaseResponse)(nil),                 // 20: mira.BaseResponse
+	(*mirapb.BaseRequest)(nil),                  // 21: mira.BaseRequest
 }
 var file_proto_mira_ida_access_service_proto_depIdxs = []int32{
-	8, // 0: mira.GetPrivateDBConnInfoResponse.baseResponse:type_name -> mira.BaseResponse
-	1, // 1: mira.GetPrivateDBConnInfoResponse.data:type_name -> mira.GetPrivateDBConnInfoResp
-	9, // 2: mira.GetPrivateAssetInfoByEnNameRequest.baseRequest:type_name -> mira.BaseRequest
-	5, // 3: mira.AssetInfo.dataInfo:type_name -> mira.DataInfo
-	6, // 4: mira.DataInfo.itemList:type_name -> mira.SaveTableColumnItem
-	8, // 5: mira.GetPrivateAssetInfoByEnNameResponse.baseResponse:type_name -> mira.BaseResponse
-	4, // 6: mira.GetPrivateAssetInfoByEnNameResponse.data:type_name -> mira.AssetInfo
-	0, // 7: mira.MiraIdaAccess.GetPrivateDBConnInfo:input_type -> mira.GetPrivateDBConnInfoRequest
-	3, // 8: mira.MiraIdaAccess.GetPrivateAssetInfoByEnName:input_type -> mira.GetPrivateAssetInfoByEnNameRequest
-	2, // 9: mira.MiraIdaAccess.GetPrivateDBConnInfo:output_type -> mira.GetPrivateDBConnInfoResponse
-	7, // 10: mira.MiraIdaAccess.GetPrivateAssetInfoByEnName:output_type -> mira.GetPrivateAssetInfoByEnNameResponse
-	9, // [9:11] is the sub-list for method output_type
-	7, // [7:9] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	20, // 0: mira.GetPrivateDBConnInfoResponse.baseResponse:type_name -> mira.BaseResponse
+	1,  // 1: mira.GetPrivateDBConnInfoResponse.data:type_name -> mira.GetPrivateDBConnInfoResp
+	21, // 2: mira.GetPrivateAssetInfoByEnNameRequest.baseRequest:type_name -> mira.BaseRequest
+	5,  // 3: mira.AssetInfo.dataInfo:type_name -> mira.DataInfo
+	6,  // 4: mira.DataInfo.itemList:type_name -> mira.SaveTableColumnItem
+	20, // 5: mira.GetPrivateAssetInfoByEnNameResponse.baseResponse:type_name -> mira.BaseResponse
+	4,  // 6: mira.GetPrivateAssetInfoByEnNameResponse.data:type_name -> mira.AssetInfo
+	21, // 7: mira.CreateDataSourceRequest.baseRequest:type_name -> mira.BaseRequest
+	20, // 8: mira.CreateDataSourceResponse.baseResponse:type_name -> mira.BaseResponse
+	10, // 9: mira.CreateDataSourceResponse.data:type_name -> mira.DataSourceId
+	21, // 10: mira.CreateAssetRequest.baseRequest:type_name -> mira.BaseRequest
+	12, // 11: mira.CreateAssetRequest.chainInfo:type_name -> mira.ChainInfo
+	13, // 12: mira.CreateAssetRequest.resourceBasic:type_name -> mira.ResourceBasic
+	14, // 13: mira.CreateAssetRequest.table:type_name -> mira.Table
+	16, // 14: mira.CreateAssetRequest.file:type_name -> mira.File
+	15, // 15: mira.Table.columns:type_name -> mira.TableColumn
+	17, // 16: mira.File.files:type_name -> mira.FileItem
+	20, // 17: mira.CreateAssetResponse.baseResponse:type_name -> mira.BaseResponse
+	19, // 18: mira.CreateAssetResponse.data:type_name -> mira.ResourceId
+	0,  // 19: mira.MiraIdaAccess.GetPrivateDBConnInfo:input_type -> mira.GetPrivateDBConnInfoRequest
+	3,  // 20: mira.MiraIdaAccess.GetPrivateAssetInfoByEnName:input_type -> mira.GetPrivateAssetInfoByEnNameRequest
+	8,  // 21: mira.MiraIdaAccess.CreateDataSource:input_type -> mira.CreateDataSourceRequest
+	11, // 22: mira.MiraIdaAccess.CreateAsset:input_type -> mira.CreateAssetRequest
+	2,  // 23: mira.MiraIdaAccess.GetPrivateDBConnInfo:output_type -> mira.GetPrivateDBConnInfoResponse
+	7,  // 24: mira.MiraIdaAccess.GetPrivateAssetInfoByEnName:output_type -> mira.GetPrivateAssetInfoByEnNameResponse
+	9,  // 25: mira.MiraIdaAccess.CreateDataSource:output_type -> mira.CreateDataSourceResponse
+	18, // 26: mira.MiraIdaAccess.CreateAsset:output_type -> mira.CreateAssetResponse
+	23, // [23:27] is the sub-list for method output_type
+	19, // [19:23] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_proto_mira_ida_access_service_proto_init() }
@@ -874,7 +1983,6 @@ func file_proto_mira_ida_access_service_proto_init() {
 	if File_proto_mira_ida_access_service_proto != nil {
 		return
 	}
-	file_proto_common_proto_init()
 	if !protoimpl.UnsafeEnabled {
 		file_proto_mira_ida_access_service_proto_msgTypes[0].Exporter = func(v any, i int) any {
 			switch v := v.(*GetPrivateDBConnInfoRequest); i {
@@ -972,6 +2080,150 @@ func file_proto_mira_ida_access_service_proto_init() {
 				return nil
 			}
 		}
+		file_proto_mira_ida_access_service_proto_msgTypes[8].Exporter = func(v any, i int) any {
+			switch v := v.(*CreateDataSourceRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[9].Exporter = func(v any, i int) any {
+			switch v := v.(*CreateDataSourceResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[10].Exporter = func(v any, i int) any {
+			switch v := v.(*DataSourceId); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[11].Exporter = func(v any, i int) any {
+			switch v := v.(*CreateAssetRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[12].Exporter = func(v any, i int) any {
+			switch v := v.(*ChainInfo); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[13].Exporter = func(v any, i int) any {
+			switch v := v.(*ResourceBasic); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[14].Exporter = func(v any, i int) any {
+			switch v := v.(*Table); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[15].Exporter = func(v any, i int) any {
+			switch v := v.(*TableColumn); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[16].Exporter = func(v any, i int) any {
+			switch v := v.(*File); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[17].Exporter = func(v any, i int) any {
+			switch v := v.(*FileItem); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[18].Exporter = func(v any, i int) any {
+			switch v := v.(*CreateAssetResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_proto_mira_ida_access_service_proto_msgTypes[19].Exporter = func(v any, i int) any {
+			switch v := v.(*ResourceId); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -979,7 +2231,7 @@ func file_proto_mira_ida_access_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_proto_mira_ida_access_service_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

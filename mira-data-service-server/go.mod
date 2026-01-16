@@ -7,6 +7,7 @@ require (
 	chainweaver.org.cn/chainweaver/mira/mira-common v1.2.2-0.20250806033123-7231941566f4
 	chainweaver.org.cn/chainweaver/mira/mira-ida-access-service v0.0.0-20250806095927-2427bfa2520c
 	gitea.com/kingbase/gokb v0.0.0-20201021123113-29bd62a876c3
+	gitee.com/opengauss/openGauss-connector-go-pq v1.0.7
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/apache/arrow/go/v15 v15.0.2
 	github.com/gin-gonic/gin v1.10.1
@@ -24,6 +25,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/zap v1.27.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250303144028-a0af3efb3deb
 	google.golang.org/grpc v1.71.0
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -38,7 +40,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	gitee.com/opengauss/openGauss-connector-go-pq v1.0.7 // indirect
 	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/apache/thrift v0.17.0 // indirect
@@ -86,7 +87,6 @@ require (
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -135,7 +135,6 @@ require (
 	golang.org/x/tools v0.34.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gonum.org/v1/gonum v0.15.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250303144028-a0af3efb3deb // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -147,3 +146,8 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.7.0 // indirect
 	sigs.k8s.io/yaml v1.5.0 // indirect
 )
+
+// 使用本地生成的代码替换私有仓库依赖
+replace chainweaver.org.cn/chainweaver/mira/mira-ida-access-service => ./local-mock/mira-ida-access-service
+replace chainweaver.org.cn/chainweaver/mira/mira-ida-access-service/pb/mirapb => ./local-mock/mira-ida-access-service/pb/mirapb
+replace chainweaver.org.cn/chainweaver/mira/mira-common => ./local-mock/mira-common

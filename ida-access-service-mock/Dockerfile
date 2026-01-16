@@ -1,5 +1,5 @@
 # 多阶段构建：编译阶段
-FROM golang:1.23.0 as builder
+FROM golang:latest as builder
 
 # 配置Go依赖环境
 RUN go env -w GO111MODULE=on
@@ -17,10 +17,9 @@ RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
 # 设置工作目录
 WORKDIR /build
 
-# 拷贝go mod文件（如果没有go.sum，go mod download会生成）
-COPY go.mod ./
+# 拷贝go mod文件
+COPY go.mod go.sum ./
 RUN go mod download
-RUN go mod tidy
 
 # 拷贝proto文件
 COPY proto/ ./proto/
@@ -29,13 +28,24 @@ COPY proto/ ./proto/
 RUN mkdir -p mirapb && \
     protoc --go_out=. --go_opt=paths=source_relative \
            --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-           proto/*.proto
+           -I. proto/mira_ida_access_service.proto proto/common.proto && \
+    mv proto/*.pb.go mirapb/ 2>/dev/null || true && \
+    ls -la mirapb/
 
 # 拷贝源代码
-COPY . .
+COPY main.go ./
+
+# 运行 go mod tidy 确保依赖正确
+RUN go mod tidy
+
+# 验证文件结构和模块
+RUN ls -la mirapb/ && \
+    head -15 mirapb/mira_ida_access_service.pb.go && \
+    go list -m && \
+    go list ./mirapb
 
 # 构建应用
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ida-access-service-mock main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ida-access-service-mock .
 
 # 运行阶段：使用alpine减小镜像大小
 FROM alpine:latest

@@ -6,7 +6,7 @@ import (
 	"net"
 	"os"
 
-	pb "ida-access-service-mock/proto/mirapb"
+	pb "ida-access-service-mock/mirapb"
 	"google.golang.org/grpc"
 )
 
@@ -90,6 +90,46 @@ func (s *server) GetPrivateAssetInfoByEnName(ctx context.Context, req *pb.GetPri
 			ParticipantId: "participant_001",
 			ParticipantName: "测试参与方",
 			AccountAlias:  "test_alias",
+		},
+	}, nil
+}
+
+// CreateDataSource 创建数据源
+func (s *server) CreateDataSource(ctx context.Context, req *pb.CreateDataSourceRequest) (*pb.CreateDataSourceResponse, error) {
+	log.Printf("收到CreateDataSource请求: RequestId=%s, Name=%s, Host=%s, Port=%d, DbType=%d",
+		req.BaseRequest.RequestId, req.Name, req.Host, req.Port, req.DbType)
+
+	// Mock数据 - 返回一个数据源ID（模拟创建成功）
+	// 使用请求中的信息生成一个模拟ID
+	mockId := int32(1000 + len(req.Name)%1000) // 简单的模拟ID生成
+
+	return &pb.CreateDataSourceResponse{
+		BaseResponse: &pb.BaseResponse{
+			Code: 0,
+			Msg:  "success",
+		},
+		Data: &pb.DataSourceId{
+			Id: mockId,
+		},
+	}, nil
+}
+
+// CreateAsset 创建资产
+func (s *server) CreateAsset(ctx context.Context, req *pb.CreateAssetRequest) (*pb.CreateAssetResponse, error) {
+	log.Printf("收到CreateAsset请求: RequestId=%s, ResourceNumber=%s, EnName=%s",
+		req.BaseRequest.RequestId, req.ResourceBasic.ResourceNumber, req.ResourceBasic.EnName)
+
+	// Mock数据 - 返回一个资产ID（模拟创建成功）
+	// 使用资源编号生成一个模拟ID
+	mockId := int32(2000 + len(req.ResourceBasic.EnName)%1000) // 简单的模拟ID生成
+
+	return &pb.CreateAssetResponse{
+		BaseResponse: &pb.BaseResponse{
+			Code: 0,
+			Msg:  "success",
+		},
+		Data: &pb.ResourceId{
+			Id: mockId,
 		},
 	}, nil
 }

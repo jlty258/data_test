@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package mira;
-option go_package = "./mirapb";
+option go_package = "ida-access-service-mock/mirapb";
 
 message Empty {}
 
