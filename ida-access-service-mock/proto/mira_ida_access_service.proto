@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package mira;
 import "proto/common.proto";
-option go_package = "./mirapb";
+option go_package = "ida-access-service-mock/mirapb";
 
 // 获取包含隐私信息的数据源连接信息接口
 message GetPrivateDBConnInfoRequest {
@@ -26,6 +26,12 @@ message GetPrivateDBConnInfoResp {
 message GetPrivateDBConnInfoResponse {
   BaseResponse baseResponse = 1;
   GetPrivateDBConnInfoResp data = 2;
+}
+
+// 数据资产类型枚举
+enum DataProductType {
+  DATA_PRODUCT_TYPE_DATASET = 0; // 数据集
+  DATA_PRODUCT_TYPE_LLM = 1;     // 大模型语料
 }
 
 // 通过资产英文名称获取资产详情
@@ -52,6 +58,7 @@ message AssetInfo {
   string participantId = 15;
   string participantName = 16;
   string AccountAlias = 17;
+  DataProductType dataProductType = 18; // 数据产品类型
 }
 
 message DataInfo {
@@ -71,6 +78,53 @@ message SaveTableColumnItem {
 }
 
 message GetPrivateAssetInfoByEnNameResponse {
+  BaseResponse baseResponse = 1;
+  AssetInfo data = 2;
+}
+
+// 资产列表相关定义
+message AssetList {
+  Pagination pagination = 1;
+  repeated AssetItem list = 2;
+}
+
+message AssetItem {
+  string assetId = 1;
+  string assetNumber = 2;
+  string assetName = 3;
+  string holderCompany = 4;
+  string intro = 5;
+  string txId = 6;
+  string uploadedAt = 7;
+  string chainName = 8;
+  string participantId = 9;
+  string participantName = 10;
+  string alias = 11;
+  DataProductType dataProductType = 12; // 数据产品类型
+}
+
+// 获取资产列表请求
+message GetPrivateAssetListRequest {
+  BaseRequest baseRequest = 1;
+  int32 pageNumber = 2;  // 当前页
+  int32 pageSize = 3;     // 每页条数
+  repeated Filter filters = 4; // 搜索条件
+}
+
+// 获取资产列表响应
+message GetPrivateAssetListResponse {
+  BaseResponse baseResponse = 1;
+  AssetList data = 2;
+}
+
+// 获取资产详情请求（通过ID）
+message GetPrivateAssetInfoRequest {
+  string requestId = 1; // 请求ID
+  int32 assetId = 2;    // 资产自增id
+}
+
+// 获取资产详情响应（通过ID）
+message GetPrivateAssetInfoResponse {
   BaseResponse baseResponse = 1;
   AssetInfo data = 2;
 }
@@ -172,6 +226,30 @@ message ResourceId {
   int32 id = 1;
 }
 
+// 更新资产接口
+message UpdateAssetRequest {
+  BaseRequest baseRequest = 1;
+  int32 assetId = 2;              // 资产ID
+  ResourceBasic resourceBasic = 3; // 资源基本信息（可选，只更新提供的字段）
+  Table table = 4;                // 库表资源（可选）
+  File file = 5;                  // 文件资源（可选）
+}
+
+message UpdateAssetResponse {
+  BaseResponse baseResponse = 1;
+  AssetInfo data = 2;             // 更新后的资产信息
+}
+
+// 删除资产接口
+message DeleteAssetRequest {
+  BaseRequest baseRequest = 1;
+  int32 assetId = 2;              // 资产ID
+}
+
+message DeleteAssetResponse {
+  BaseResponse baseResponse = 1;
+}
+
 // IDA Access Service 定义
 service MiraIdaAccess {
   // 获取包含隐私信息的数据源连接信息接口
@@ -180,11 +258,23 @@ service MiraIdaAccess {
   // 通过资产英文名称获取资产详情
   rpc GetPrivateAssetInfoByEnName(GetPrivateAssetInfoByEnNameRequest) returns (GetPrivateAssetInfoByEnNameResponse);
   
+  // 获取资产列表
+  rpc GetPrivateAssetList(GetPrivateAssetListRequest) returns (GetPrivateAssetListResponse);
+  
+  // 通过资产ID获取资产详情
+  rpc GetPrivateAssetInfo(GetPrivateAssetInfoRequest) returns (GetPrivateAssetInfoResponse);
+  
   // 创建数据源
   rpc CreateDataSource(CreateDataSourceRequest) returns (CreateDataSourceResponse);
   
   // 创建资产
   rpc CreateAsset(CreateAssetRequest) returns (CreateAssetResponse);
+  
+  // 更新资产
+  rpc UpdateAsset(UpdateAssetRequest) returns (UpdateAssetResponse);
+  
+  // 删除资产
+  rpc DeleteAsset(DeleteAssetRequest) returns (DeleteAssetResponse);
 }
 
 // 注意：需要重新运行 protoc 生成 Go 代码

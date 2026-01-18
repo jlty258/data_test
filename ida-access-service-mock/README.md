@@ -8,6 +8,22 @@ IDA Access Service 的 Mock 实现，用于开发和测试。
 
 - `GetPrivateDBConnInfo` - 获取数据库连接信息
 - `GetPrivateAssetInfoByEnName` - 通过资产英文名称获取资产详情
+- `GetPrivateAssetList` - 获取资产列表（支持分页和过滤）
+- `GetPrivateAssetInfo` - 通过资产ID获取资产详情
+- `CreateDataSource` - 创建数据源
+- `CreateAsset` - 创建资产
+
+## 存储
+
+服务支持数据持久化存储，当前实现：
+
+- **内存存储** (memory) - 默认存储方式，数据存储在内存中，服务重启后数据会丢失
+- **MySQL 存储** (mysql) - 暂未实现
+
+数据会持久化保存，包括：
+- 数据源信息
+- 资产信息
+- 资产字段信息
 
 ## 本地运行
 
@@ -70,6 +86,7 @@ docker-compose up -d
 ## 环境变量
 
 - `PORT`: 服务监听端口（默认: 9091）
+- `STORAGE_TYPE`: 存储类型，可选值：`memory`（默认）、`mysql`（暂未实现）
 
 ## 使用
 
@@ -80,9 +97,23 @@ export IDA_MANAGE_HOST=localhost
 export IDA_MANAGE_PORT=9091
 ```
 
-## Mock 数据说明
+## 存储说明
 
-所有接口返回的都是 Mock 数据，可以根据需要修改 `main.go` 中的响应数据。
+服务使用存储层来管理数据：
+
+- **内存存储**：数据存储在内存中，支持所有 CRUD 操作
+- 创建的数据源和资产会持久化在存储中
+- 查询操作会从存储中读取真实数据
+
+### 使用内存存储（默认）
+
+```bash
+# 使用默认内存存储
+go run main.go
+
+# 或显式指定
+STORAGE_TYPE=memory go run main.go
+```
 
 ## 测试
 

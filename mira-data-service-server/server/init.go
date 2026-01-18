@@ -40,10 +40,10 @@ func (i *Initializer) Init() error {
 		return fmt.Errorf("failed to init OSS: %v", err)
 	}
 
-	// 5. 初始化K8sService（依赖日志）
-	if err := i.initK8sService(); err != nil {
-		return fmt.Errorf("failed to init K8sService: %v", err)
-	}
+	// // 5. 初始化K8sService（依赖日志）
+	// if err := i.initK8sService(); err != nil {
+	// 	return fmt.Errorf("failed to init K8sService: %v", err)
+	// }
 
 	// 6. 初始化TableInfoService（依赖日志）
 	if err := i.initTableInfoService(); err != nil {

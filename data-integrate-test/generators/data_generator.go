@@ -175,12 +175,19 @@ func (g *DataGenerator) generateValue(field FieldType, rowID int64) interface{} 
 
 	// 字符串类型
 	if strings.Contains(sqlType, "VARCHAR") || strings.Contains(sqlType, "CHAR") {
-		size := field.MaxSize
+		// 从SQL类型中提取实际长度限制
+		size := g.extractSizeFromSQLType(sqlType)
 		if size == 0 {
-			size = 255
+			size = field.MaxSize
 		}
-		// 生成随机字符串，大小可变（1到MaxSize字节）
+		if size == 0 {
+			size = 255 // 默认值
+		}
+		// 生成随机字符串，大小可变（1到size字节），但不超过字段定义的长度
 		actualSize := mathrand.Intn(size) + 1
+		if actualSize > size {
+			actualSize = size
+		}
 		return g.generateRandomString(actualSize)
 	}
 	if strings.Contains(sqlType, "TEXT") || strings.Contains(sqlType, "CLOB") {
@@ -258,6 +265,18 @@ func (g *DataGenerator) getPlaceholders() string {
 		placeholders[i] = "?"
 	}
 	return "(" + strings.Join(placeholders, ",") + ")"
+}
+
+// extractSizeFromSQLType 从SQL类型中提取长度限制
+func (g *DataGenerator) extractSizeFromSQLType(sqlType string) int {
+	// 提取 VARCHAR(100) 或 CHAR(100) 中的数字
+	var size int
+	if strings.Contains(sqlType, "VARCHAR") {
+		fmt.Sscanf(sqlType, "VARCHAR(%d)", &size)
+	} else if strings.Contains(sqlType, "CHAR") {
+		fmt.Sscanf(sqlType, "CHAR(%d)", &size)
+	}
+	return size
 }
 
 // quoteIdentifier 引用标识符（根据数据库类型）

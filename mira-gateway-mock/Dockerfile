@@ -8,16 +8,24 @@ RUN go env -w GOPROXY=https://goproxy.cn,direct
 # 设置工作目录
 WORKDIR /build
 
-# 拷贝go mod文件（如果没有go.sum，go mod download会生成）
-COPY go.mod ./
+# 拷贝go mod文件（利用 Docker 缓存层）
+# 如果依赖没有变化，这一层会被缓存，避免重复下载
+COPY go.mod go.sum* ./
 RUN go mod download
-RUN go mod tidy
+
+# 复制 vendor 目录（如果存在，优先使用本地依赖）
+# 注意：需要先运行 go mod vendor 生成 vendor 目录
+COPY vendor ./vendor
 
 # 拷贝源代码
 COPY . .
 
-# 构建应用
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o mira-gateway-mock main.go
+# 运行 go mod tidy 确保依赖正确
+RUN go mod tidy
+
+# 构建应用（使用 vendor 模式，如果 vendor 存在）
+# -mod=vendor 会优先使用 vendor 目录中的依赖，避免网络下载
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o mira-gateway-mock main.go
 
 # 运行阶段：使用alpine减小镜像大小
 FROM alpine:latest

@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: datasource-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-testdb}
+      MYSQL_USER: ${MYSQL_USER:-testuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-testpass}
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init-scripts/mysql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root123}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - datasource-network
+
+  # KingBase 数据库（人大金仓）
+  kingbase:
+    image: huzhihui/kingbase:v8r6
+    container_name: datasource-kingbase
+    environment:
+      KINGBASE_SYSTEM_PASSWORD: ${KINGBASE_SYSTEM_PASSWORD:-123456}
+      EXTEND_INIT_PARAM: ${KINGBASE_INIT_PARAM:---locale=en_US.UTF-8 -m oracle --enable-ci}
+      TZ: Asia/Shanghai
+    ports:
+      - "${KINGBASE_PORT:-54321}:54321"
+    volumes:
+      - kingbase_data:/opt/Kingbase/ES/V8
+      - ./init-scripts/kingbase:/docker-entrypoint-initdb.d:ro
+      # 如果需要授权文件，取消下面的注释并放置 license.dat 文件
+      # - ./kingbase/license.dat:/home/kingbase/license.dat:ro
+    healthcheck:
+      test: ["CMD-SHELL", "ksql -USYSTEM -W${KINGBASE_SYSTEM_PASSWORD:-123456} -h localhost -p 54321 TEST -c 'SELECT 1' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    privileged: true
+    networks:
+      - datasource-network
+
+  # VastBase 数据库
+  vastbase:
+    image: thankwhite/vastbase_g100:2.2.15
+    container_name: datasource-vastbase
+    environment:
+      VASTBASE_USER: ${VASTBASE_USER:-vastbase}
+      VASTBASE_PASSWORD: ${VASTBASE_PASSWORD:-Vastbase@123}
+      VASTBASE_DB: ${VASTBASE_DB:-vastbase}
+      TZ: Asia/Shanghai
+    ports:
+      - "${VASTBASE_PORT:-5432}:5432"
+    volumes:
+      - vastbase_data:/home/vastbase/data
+      - ./init-scripts/vastbase:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${VASTBASE_USER:-vastbase} -d ${VASTBASE_DB:-vastbase} || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - datasource-network
+
+  # GBase 数据库
+  # 注意：GBase 的公开镜像较少，这里提供一个基础配置模板
+  # 如果您的环境中有 GBase 镜像，请替换下面的 image 字段
+  gbase:
+    image: liaosnet/gbase8s:v8.8_3633x31_csdk_x64
+    container_name: datasource-gbase
+    environment:
+      SERVERNAME: ${GBASE_SERVERNAME:-gbase01}
+      USERPASS: ${GBASE_PASSWORD:-GBase123$%}
+      MEMS: ${GBASE_MEMS:-2048}
+      TZ: Asia/Shanghai
+    ports:
+      - "${GBASE_PORT:-19088}:9088"
+    volumes:
+      - gbase_data:/opt/gbase/data
+      - ./init-scripts/gbase:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # GBase 健康检查需要根据实际镜像调整
+      test: ["CMD-SHELL", "echo 'SELECT 1' | dbaccess ${GBASE_DB:-sysmaster} || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - datasource-network
+
+volumes:
+  mysql_data:
+    driver: local
+  kingbase_data:
+    driver: local
+  vastbase_data:
+    driver: local
+  gbase_data:
+    driver: local
+
+networks:
+  datasource-network:
+    driver: bridge
+    name: datasource-network
+

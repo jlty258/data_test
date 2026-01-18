@@ -1,0 +1,53 @@
+# 排除不必要的文件，加快构建速度
+
+# Git 相关
+.git
+.gitignore
+.gitattributes
+
+# IDE 相关
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# 日志文件
+*.log
+logs/
+trace/
+
+# 测试相关
+test/
+*_test.go
+*.test
+
+# 构建产物
+bin/
+build/
+dist/
+*.exe
+
+# 文档
+*.md
+!README.md
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# OS 文件
+.DS_Store
+Thumbs.db
+
+# 配置文件（如果需要可以从环境变量生成）
+config/config.yaml
+
+# 其他
+.ci/
+sonar-project.properties
+coverstats.sh
+docker_build.sh
+generate-config.sh
+

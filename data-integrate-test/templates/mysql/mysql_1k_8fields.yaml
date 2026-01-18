@@ -1,0 +1,22 @@
+name: "mysql_1k_8fields"
+description: "MySQL 1K行 8字段测试"
+
+database:
+  type: "mysql"
+  # name 留空，使用配置中的默认数据库
+
+schema:
+  field_count: 8
+  max_field_size: 1024
+  table_name: "test_data"
+  asset_name: "test_data_asset"
+
+data:
+  row_count: 1000
+  use_snapshot: false
+
+tests:
+  - type: "read"
+    expected: 1000
+    tolerance: 0.1
+

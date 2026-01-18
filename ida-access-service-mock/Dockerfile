@@ -17,18 +17,25 @@ RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
 # 设置工作目录
 WORKDIR /build
 
-# 拷贝go mod文件
+# 拷贝go mod文件（利用 Docker 缓存层）
 COPY go.mod go.sum ./
+
+# 先尝试下载依赖（如果 vendor 不存在）
+# 如果 vendor 存在，后续会优先使用 vendor
 RUN go mod download
+
+# 复制 vendor 目录（如果存在，优先使用本地依赖）
+# 注意：需要先运行 go mod vendor 生成 vendor 目录
+COPY vendor ./vendor
 
 # 拷贝proto文件
 COPY proto/ ./proto/
 
 # 生成proto代码
 RUN mkdir -p mirapb && \
-    protoc --go_out=. --go_opt=paths=source_relative \
-           --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-           -I. proto/mira_ida_access_service.proto proto/common.proto && \
+    protoc --go_out=. --go_opt=module=ida-access-service-mock \
+           --go-grpc_out=. --go-grpc_opt=module=ida-access-service-mock \
+           -I. proto/common.proto proto/mira_ida_access_service.proto && \
     mv proto/*.pb.go mirapb/ 2>/dev/null || true && \
     ls -la mirapb/
 
@@ -38,14 +45,12 @@ COPY main.go ./
 # 运行 go mod tidy 确保依赖正确
 RUN go mod tidy
 
-# 验证文件结构和模块
-RUN ls -la mirapb/ && \
-    head -15 mirapb/mira_ida_access_service.pb.go && \
-    go list -m && \
-    go list ./mirapb
+# 拷贝存储层代码
+COPY storage/ ./storage/
 
-# 构建应用
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ida-access-service-mock .
+# 构建应用（使用 vendor 模式，如果 vendor 存在）
+# -mod=vendor 会优先使用 vendor 目录中的依赖，避免网络下载
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o ida-access-service-mock .
 
 # 运行阶段：使用alpine减小镜像大小
 FROM alpine:latest

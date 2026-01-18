@@ -315,6 +315,30 @@ message ResourceId {
   int32 id = 1;
 }
 
+// 更新资产接口
+message UpdateAssetRequest {
+  BaseRequest baseRequest = 1;
+  int32 assetId = 2;              // 资产ID
+  ResourceBasic resourceBasic = 3; // 资源基本信息（可选，只更新提供的字段）
+  Table table = 4;                // 库表资源（可选）
+  File file = 5;                  // 文件资源（可选）
+}
+
+message UpdateAssetResponse {
+  BaseResponse baseResponse = 1;
+  AssetInfo data = 2;             // 更新后的资产信息
+}
+
+// 删除资产接口
+message DeleteAssetRequest {
+  BaseRequest baseRequest = 1;
+  int32 assetId = 2;              // 资产ID
+}
+
+message DeleteAssetResponse {
+  BaseResponse baseResponse = 1;
+}
+
 // ============== 资产登记接口定义(14) ============== //
 // 1. 数据资产登记接口
 
@@ -1233,6 +1257,22 @@ service MiraIdaAccess {
   rpc CreateAsset(CreateAssetRequest) returns (CreateAssetResponse){
     option (google.api.http) = {
       post: "/v1/CreateAsset"
+      body: "*"
+    };
+  };
+  
+  // 更新资产
+  rpc UpdateAsset(UpdateAssetRequest) returns (UpdateAssetResponse){
+    option (google.api.http) = {
+      post: "/v1/UpdateAsset"
+      body: "*"
+    };
+  };
+  
+  // 删除资产
+  rpc DeleteAsset(DeleteAssetRequest) returns (DeleteAssetResponse){
+    option (google.api.http) = {
+      post: "/v1/DeleteAsset"
       body: "*"
     };
   };

@@ -35,6 +35,33 @@ services:
     networks:
       - mock-services
 
+  # MySQL 数据库 - 匹配 data-integrate-test/config/test_config.yaml 配置
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-test
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=test_db
+      - TZ=Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-test-data:/var/lib/mysql
+      - ./datasource-hub/init-scripts/mysql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - mock-services
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+
   # MinIO 对象存储服务
   minio:
     image: minio/minio:latest
@@ -78,18 +105,20 @@ services:
       - MIRA_GATEWAY_HOST_PORT=8080
       - IDA_MANAGE_HOST=ida-access-service-mock
       - IDA_MANAGE_PORT=9091
-      # 数据库配置（如果数据库在docker中，使用服务名；否则使用host.docker.internal）
-      - MYSQL_HOST=${MYSQL_HOST:-host.docker.internal}
+      # 数据库配置（使用docker服务名）
+      - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
       # OSS配置（使用docker服务名）
       - MINIO_HOST=${MINIO_HOST:-minio}
       - MINIO_PORT=${MINIO_PORT:-9000}
     volumes:
-      # 挂载配置文件
-      - ./mira-data-service-server/server/config.yaml:/home/workspace/config/config.yaml:ro
+      # 挂载配置文件（使用 Docker 服务名）
+      - ./mira-data-service-server/config/config.yaml:/home/workspace/config/config.yaml:ro
       # 如果需要挂载日志
       - ./mira-data-service-server/logs:/home/workspace/logs
     depends_on:
+      mysql:
+        condition: service_healthy
       mira-gateway-mock:
         condition: service_started
       ida-access-service-mock:
@@ -163,6 +192,8 @@ services:
     image: data-integrate-test:latest
     container_name: data-integrate-test
     depends_on:
+      mysql:
+        condition: service_healthy
       mira-data-service-server:
         condition: service_started
       ida-access-service-mock:
@@ -174,8 +205,8 @@ services:
       - DATA_SERVICE_PORT=9090
       - IDA_SERVICE_HOST=ida-access-service-mock
       - IDA_SERVICE_PORT=9091
-      - MYSQL_HOST=doris-fe
-      - MYSQL_PORT=9030
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
     volumes:
       - ./data-integrate-test/config:/home/workspace/config:ro
       - ./data-integrate-test/templates:/home/workspace/templates:ro
@@ -186,6 +217,8 @@ services:
       - test
 
 volumes:
+  mysql-test-data:
+    driver: local
   minio-data:
     driver: local
   doris-fe-meta:
@@ -195,8 +228,6 @@ volumes:
 
 networks:
   mock-services:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
+    name: data-service-test_mock-services
+    external: true
 
