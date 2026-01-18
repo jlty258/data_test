@@ -2,7 +2,11 @@ module mira-gateway-mock
 
 go 1.23.0
 
-require github.com/gin-gonic/gin v1.10.1
+require (
+	github.com/gin-gonic/gin v1.10.1
+	google.golang.org/grpc v1.71.0
+	google.golang.org/protobuf v1.36.6
+)
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect

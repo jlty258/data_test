@@ -6,6 +6,7 @@ import (
 	"data-integrate-test/generators"
 	"data-integrate-test/isolation"
 	"data-integrate-test/strategies"
+	"data-integrate-test/utils"
 	"data-integrate-test/validators"
 	"fmt"
 	"time"
@@ -24,6 +25,7 @@ type TestExecutor struct {
 	assetName    string
 	dataSourceId int32
 	assetId      int32
+	schema       *generators.SchemaDefinition // 保存生成的schema
 }
 
 func NewTestExecutor(
@@ -139,6 +141,8 @@ func (te *TestExecutor) setup(ctx context.Context) error {
 		te.template.Schema.FieldTypes,
 		te.template.Schema.MaxFieldSize,
 	)
+	// 保存schema以便后续使用
+	te.schema = schema
 
 	// 检查表是否存在
 	tableExists, err := te.strategy.TableExists(ctx, te.tableName)
@@ -235,52 +239,61 @@ func (te *TestExecutor) testRead(
 		StartTime: time.Now(),
 	}
 
-	// TODO: 调用data-service的ReadStreamingData
-	// 这里需要proto编译后才能实现
-	// req := &datasource.StreamReadRequest{
-	//     AssetName:   te.assetName,
-	//     ChainInfoId: "test_chain",
-	//     RequestId:   fmt.Sprintf("read_%d", time.Now().Unix()),
-	//     DbFields:    te.getFieldNames(),
-	// }
-	//
-	// readStart := time.Now()
-	// responses, err := te.dataClient.ReadStreamingData(ctx, req)
-	// readDuration := time.Since(readStart)
-	//
-	// if err != nil {
-	//     result.Passed = false
-	//     result.Error = err.Error()
-	//     return result
-	// }
-	//
-	// // 统计行数
-	// actualCount := int64(0)
-	// for _, resp := range responses {
-	//     count, _ := utils.CountRowsFromArrow(resp.Data)
-	//     actualCount += count
-	// }
-	//
-	// // 验证行数
-	// validationResult, err := validator.ValidateReadResult(ctx, actualCount)
-	// if err != nil {
-	//     result.Passed = false
-	//     result.Error = err.Error()
-	//     return result
-	// }
+	// 调用data-service的ReadStreamingData接口
+	// 注意：ChainInfoId 必须与创建资产时使用的保持一致（test_chain_001）
+	// Alias 可以为空，但需要传递（data-service 会使用它）
+	req := &clients.StreamReadRequest{
+		AssetName:   te.assetName, // 使用资产英文名（AssetEnName）
+		ChainInfoId: "test_chain_001", // 与创建资产时的 ChainInfoId 保持一致
+		RequestId:   fmt.Sprintf("read_%d", time.Now().Unix()),
+		DbFields:    te.getFieldNames(),
+		Alias:       "", // 链账户别名，测试环境可以为空
+	}
 
-	// 临时实现：从数据库直接查询
-	actualCount, err := te.strategy.GetRowCount(ctx, te.tableName)
+	readStart := time.Now()
+	responses, err := te.dataClient.ReadStreamingData(ctx, req)
+	readDuration := time.Since(readStart)
+
 	if err != nil {
 		result.Passed = false
-		result.Error = err.Error()
+		result.Error = fmt.Errorf("调用data-service读取接口失败: %w", err).Error()
+		result.EndTime = time.Now()
+		result.Duration = result.EndTime.Sub(result.StartTime)
 		return result
 	}
 
+	// 统计行数（从所有Arrow响应中累计）
+	actualCount := int64(0)
+	for _, resp := range responses {
+		if resp != nil {
+			arrowBatch := resp.GetArrowBatch()
+			// 跳过EOF标记和空批次
+			if len(arrowBatch) == 0 {
+				continue
+			}
+			// 检查是否是EOF标记
+			if len(arrowBatch) == 3 && string(arrowBatch) == "EOF" {
+				continue // EOF标记，跳过
+			}
+			count, err := utils.CountRowsFromArrow(arrowBatch)
+			if err != nil {
+				result.Passed = false
+				result.Error = fmt.Errorf("解析Arrow数据失败: %w", err).Error()
+				result.EndTime = time.Now()
+				result.Duration = result.EndTime.Sub(result.StartTime)
+				return result
+			}
+			actualCount += count
+		}
+	}
+
+	// 验证行数
 	validationResult, err := validator.ValidateReadResult(ctx, actualCount)
 	if err != nil {
 		result.Passed = false
 		result.Error = err.Error()
+		result.EndTime = time.Now()
+		result.Duration = result.EndTime.Sub(result.StartTime)
 		return result
 	}
 
@@ -288,7 +301,9 @@ func (te *TestExecutor) testRead(
 	result.Actual = validationResult.Actual
 	result.Diff = validationResult.Diff
 	result.DiffPercent = validationResult.DiffPercent
-	result.Message = validationResult.Message
+	result.Message = fmt.Sprintf("%s (data-service调用耗时: %v)", validationResult.Message, readDuration)
+	result.EndTime = time.Now()
+	result.Duration = result.EndTime.Sub(result.StartTime)
 
 	return result
 }
@@ -305,16 +320,28 @@ func (te *TestExecutor) testWrite(
 		StartTime: time.Now(),
 	}
 
-	// TODO: 实现写入测试
-	// 1. 生成测试数据
-	// 2. 调用data-service的WriteInternalData
+	// 写入测试：先读取现有数据，然后通过data-service写入
+	// 注意：这里使用简化实现，实际应该生成新的测试数据并转换为Arrow格式写入
+	// 当前实现：验证当前表行数（写入功能需要Arrow数据生成，暂时保留TODO）
+	
+	// TODO: 完整实现写入测试
+	// 1. 生成测试数据（Arrow格式）
+	// 2. 调用data-service的WriteInternalData接口
 	// 3. 验证写入后的行数
-
-	// 临时实现：验证当前表行数
+	
+	// 临时实现：验证当前表行数（作为写入测试的基础验证）
+	// 实际写入测试需要：
+	// - 从数据库读取数据并转换为Arrow格式
+	// - 或生成新的测试数据并转换为Arrow格式
+	// - 调用WriteInternalData写入
+	// - 验证写入后的行数
+	
 	validationResult, err := validator.ValidateWriteResult(ctx, te.strategy.GetDB(), te.tableName)
 	if err != nil {
 		result.Passed = false
 		result.Error = err.Error()
+		result.EndTime = time.Now()
+		result.Duration = result.EndTime.Sub(result.StartTime)
 		return result
 	}
 
@@ -322,7 +349,9 @@ func (te *TestExecutor) testWrite(
 	result.Actual = validationResult.Actual
 	result.Diff = validationResult.Diff
 	result.DiffPercent = validationResult.DiffPercent
-	result.Message = validationResult.Message
+	result.Message = fmt.Sprintf("%s (注意：当前为简化实现，未实际调用data-service写入接口)", validationResult.Message)
+	result.EndTime = time.Now()
+	result.Duration = result.EndTime.Sub(result.StartTime)
 
 	return result
 }
@@ -408,6 +437,15 @@ func (te *TestExecutor) cleanup(ctx context.Context) {
 
 // getFieldNames 获取字段名列表
 func (te *TestExecutor) getFieldNames() []string {
-	// TODO: 从schema获取
-	return []string{"*"}
+	if te.schema == nil || len(te.schema.Fields) == 0 {
+		// 如果没有schema，返回空数组让 data-service 使用 SELECT * FROM ...
+		return []string{}
+	}
+	
+	// 从schema获取实际字段名
+	fieldNames := make([]string, 0, len(te.schema.Fields))
+	for _, field := range te.schema.Fields {
+		fieldNames = append(fieldNames, field.Name)
+	}
+	return fieldNames
 }

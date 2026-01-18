@@ -5,6 +5,16 @@ FROM golang:latest as builder
 RUN go env -w GO111MODULE=on
 RUN go env -w GOPROXY=https://goproxy.cn,direct
 
+# 安装 protobuf 编译器
+RUN apt-get update && \
+    apt-get install -y -qq protobuf-compiler && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# 安装 protobuf Go 插件
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
 # 设置工作目录
 WORKDIR /build
 
@@ -13,9 +23,15 @@ WORKDIR /build
 COPY go.mod go.sum* ./
 RUN go mod download
 
-# 复制 vendor 目录（如果存在，优先使用本地依赖）
-# 注意：需要先运行 go mod vendor 生成 vendor 目录
-COPY vendor ./vendor
+# 复制 proto 文件
+COPY proto ./proto
+
+# 生成 proto 代码
+RUN mkdir -p mirapb && \
+    protoc --go_out=. --go_opt=paths=source_relative \
+           --go-grpc_out=. --go-grpc_opt=paths=source_relative \
+           -I. proto/common.proto proto/mira_ida_access_service.proto && \
+    mv proto/*.pb.go mirapb/ 2>/dev/null || true
 
 # 拷贝源代码
 COPY . .
@@ -23,9 +39,8 @@ COPY . .
 # 运行 go mod tidy 确保依赖正确
 RUN go mod tidy
 
-# 构建应用（使用 vendor 模式，如果 vendor 存在）
-# -mod=vendor 会优先使用 vendor 目录中的依赖，避免网络下载
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o mira-gateway-mock main.go
+# 构建应用（禁用 CGO，纯 Go 编译）
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o mira-gateway-mock main.go
 
 # 运行阶段：使用alpine减小镜像大小
 FROM alpine:latest

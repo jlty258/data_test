@@ -1,0 +1,52 @@
+# Git 相关
+.git
+.gitignore
+.gitattributes
+
+# IDE 相关
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# 构建产物
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# 测试和报告
+reports/
+*.test
+*.out
+coverage.html
+
+# 依赖和缓存
+vendor/
+*.mod.bak
+*.sum.bak
+
+# 文档
+*.md
+!README.md
+
+# 快照数据（可能很大，不包含在镜像中）
+snapshots/
+data-integrate-test/snapshots/
+
+# 临时文件
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# Docker 相关
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# Makefile（构建时不需要）
+Makefile
+

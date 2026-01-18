@@ -1,19 +1,19 @@
 data_service:
-  host: "localhost"
+  host: "mira-data-service-server"  # Docker 网络中使用服务名
   port: 9090
 
 mock_services:
   gateway:
-    host: "localhost"
+    host: "mira-gateway-mock"  # Docker 网络中使用服务名
     port: 8080
   ida:
-    host: "localhost"
+    host: "ida-access-service-mock"  # Docker 网络中使用服务名
     port: 9091
 
 databases:
   - name: "mysql_test"
     type: "mysql"
-    host: "localhost"  # 本地运行测试，使用localhost
+    host: "mysql"  # Docker 网络中使用服务名
     port: 3306
     user: "root"
     password: "password"

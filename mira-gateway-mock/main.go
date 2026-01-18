@@ -1,11 +1,17 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	
+	pb "mira-gateway-mock/mirapb"
 )
 
 // BaseRequest 基础请求
@@ -54,21 +60,32 @@ type GetPrivateAssetInfoByEnNameRequest struct {
 	AssetEnName string      `json:"assetEnName"`
 }
 
+// SaveTableColumnItem 数据表字段信息
+type SaveTableColumnItem struct {
+	Name        string `json:"name"`
+	DataType    string `json:"dataType"`
+	DataLength  int32  `json:"dataLength"`
+	Description string `json:"description"`
+	IsPrimaryKey int32 `json:"isPrimaryKey"`
+	PrivacyQuery int32 `json:"privacyQuery"`
+}
+
+// DataInfo 数据库信息
+type DataInfo struct {
+	DbName       string                `json:"dbName"`
+	TableName    string                `json:"tableName"`
+	ItemList     []SaveTableColumnItem `json:"itemList"`
+	DataSourceId int32                 `json:"dataSourceId"`
+}
+
 // AssetInfo 资产信息
 type AssetInfo struct {
-	AssetId      int32  `json:"assetId"`
-	AssetNumber  string `json:"assetNumber"`
-	AssetName    string `json:"assetName"`
-	AssetEnName  string `json:"assetEnName"`
-	Type         int32  `json:"type"` // 1-库表, 2-文件
-	Host         string `json:"host"`
-	Port         int32  `json:"port"`
-	DbName       string `json:"dbName"`
-	TableName    string `json:"tableName"`
-	Username     string `json:"username"`
-	Password     string `json:"password"`
-	DbType       int32  `json:"dbType"`
-	Columns      string `json:"columns"`
+	AssetId      string   `json:"assetId"` // 修改为字符串类型，匹配 data-service 的期望
+	AssetNumber  string   `json:"assetNumber"`
+	AssetName    string   `json:"assetName"`
+	AssetEnName  string   `json:"assetEnName"`
+	AssetType    int32    `json:"assetType"` // 1-库表, 2-文件
+	DataInfo     *DataInfo `json:"dataInfo"` // 嵌套的 DataInfo 结构
 	DataProductType int32 `json:"dataProductType,omitempty"`
 }
 
@@ -116,7 +133,43 @@ type PushJobResultRequest struct {
 	ObjectName string `json:"object_name"`
 }
 
+// IDAServiceClient IDA服务客户端
+var idaClient pb.MiraIdaAccessClient
+var idaConn *grpc.ClientConn
+
+// initIDAClient 初始化IDA服务客户端
+func initIDAClient() error {
+	idaHost := os.Getenv("IDA_SERVICE_HOST")
+	if idaHost == "" {
+		idaHost = "ida-access-service-mock"
+	}
+	
+	idaPort := os.Getenv("IDA_SERVICE_PORT")
+	if idaPort == "" {
+		idaPort = "9091"
+	}
+	
+	addr := fmt.Sprintf("%s:%s", idaHost, idaPort)
+	log.Printf("连接IDA服务: %s", addr)
+	
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("连接IDA服务失败: %v", err)
+	}
+	
+	idaConn = conn
+	idaClient = pb.NewMiraIdaAccessClient(conn)
+	log.Printf("IDA服务客户端初始化成功")
+	
+	return nil
+}
+
 func main() {
+	// 初始化IDA服务客户端
+	if err := initIDAClient(); err != nil {
+		log.Fatalf("初始化IDA服务客户端失败: %v", err)
+	}
+	defer idaConn.Close()
 	// 设置Gin为发布模式
 	gin.SetMode(gin.ReleaseMode)
 
@@ -181,23 +234,46 @@ func handleGetPrivateDBConnInfo(c *gin.Context) {
 
 	log.Printf("收到GetPrivateDBConnInfo请求: RequestId=%s, DbConnId=%d", req.RequestId, req.DbConnId)
 
-	// Mock数据 - 返回一个MySQL数据库连接信息
+	// 调用IDA服务的gRPC接口
+	ctx := context.Background()
+	protoReq := &pb.GetPrivateDBConnInfoRequest{
+		RequestId: req.RequestId,
+		DbConnId:  req.DbConnId,
+	}
+	
+	protoResp, err := idaClient.GetPrivateDBConnInfo(ctx, protoReq)
+	if err != nil {
+		log.Printf("调用IDA服务失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"baseResponse": BaseResponse{
+				Code: 1,
+				Msg:  fmt.Sprintf("调用IDA服务失败: %v", err),
+			},
+		})
+		return
+	}
+	
+	// 转换响应
 	resp := GetPrivateDBConnInfoResponse{
 		BaseResponse: BaseResponse{
-			Code: 0,
-			Msg:  "success",
+			Code: protoResp.BaseResponse.Code,
+			Msg:  protoResp.BaseResponse.Msg,
 		},
-		Data: GetPrivateDBConnInfoResp{
-			DbConnId:  req.DbConnId,
-			ConnName:  "Mock数据库连接",
-			Host:      "localhost",
-			Port:      3306,
-			Type:      1, // MySQL
-			Username:  "root",
-			Password:  "password",
-			DbName:    "test_db",
-			CreatedAt: "2024-01-01T00:00:00Z",
-		},
+	}
+	
+	if protoResp.Data != nil {
+		resp.Data = GetPrivateDBConnInfoResp{
+			DbConnId:    protoResp.Data.DbConnId,
+			ConnName:    protoResp.Data.ConnName,
+			Host:        protoResp.Data.Host,
+			Port:        protoResp.Data.Port,
+			Type:        protoResp.Data.Type,
+			Username:    protoResp.Data.Username,
+			Password:    protoResp.Data.Password,
+			DbName:      protoResp.Data.DbName,
+			CreatedAt:   protoResp.Data.CreatedAt,
+			LlmHubToken: protoResp.Data.LlmHubToken,
+		}
 	}
 
 	c.JSON(http.StatusOK, resp)
@@ -214,27 +290,71 @@ func handleGetPrivateAssetInfoByEnName(c *gin.Context) {
 	log.Printf("收到GetPrivateAssetInfoByEnName请求: RequestId=%s, AssetEnName=%s", 
 		req.BaseRequest.RequestId, req.AssetEnName)
 
-	// Mock数据 - 返回一个资产信息
+	// 调用IDA服务的gRPC接口
+	ctx := context.Background()
+	protoReq := &pb.GetPrivateAssetInfoByEnNameRequest{
+		BaseRequest: &pb.BaseRequest{
+			RequestId:   req.BaseRequest.RequestId,
+			ChainInfoId: req.BaseRequest.ChainInfoId,
+			Alias:       req.BaseRequest.Alias,
+			Address:     req.BaseRequest.Address,
+		},
+		AssetEnName: req.AssetEnName,
+	}
+	
+	protoResp, err := idaClient.GetPrivateAssetInfoByEnName(ctx, protoReq)
+	if err != nil {
+		log.Printf("调用IDA服务失败: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"baseResponse": BaseResponse{
+				Code: 1,
+				Msg:  fmt.Sprintf("调用IDA服务失败: %v", err),
+			},
+		})
+		return
+	}
+	
+	// 转换响应
 	resp := GetPrivateAssetInfoByEnNameResponse{
 		BaseResponse: BaseResponse{
-			Code: 0,
-			Msg:  "success",
+			Code: protoResp.BaseResponse.Code,
+			Msg:  protoResp.BaseResponse.Msg,
 		},
-		Data: AssetInfo{
-			AssetId:     1,
-			AssetNumber: "ASSET001",
-			AssetName:   "测试资产",
-			AssetEnName: req.AssetEnName,
-			Type:        1, // 库表
-			Host:        "localhost",
-			Port:        3306,
-			DbName:      "test_db",
-			TableName:   "test_table",
-			Username:    "root",
-			Password:    "password",
-			DbType:      1, // MySQL
-			Columns:     `[{"name":"id","type":"int"},{"name":"name","type":"varchar"}]`,
-		},
+	}
+	
+	if protoResp.Data != nil {
+		assetInfo := AssetInfo{
+			AssetId:        protoResp.Data.AssetId,
+			AssetNumber:    protoResp.Data.AssetNumber,
+			AssetName:      protoResp.Data.AssetName,
+			AssetEnName:    protoResp.Data.AssetEnName,
+			AssetType:      protoResp.Data.AssetType,
+			DataProductType: int32(protoResp.Data.DataProductType),
+		}
+		
+		// 转换DataInfo
+		if protoResp.Data.DataInfo != nil {
+			var itemList []SaveTableColumnItem
+			for _, item := range protoResp.Data.DataInfo.ItemList {
+				itemList = append(itemList, SaveTableColumnItem{
+					Name:        item.Name,
+					DataType:    item.DataType,
+					DataLength:  item.DataLength,
+					Description: item.Description,
+					IsPrimaryKey: item.IsPrimaryKey,
+					PrivacyQuery: item.PrivacyQuery,
+				})
+			}
+			
+			assetInfo.DataInfo = &DataInfo{
+				DbName:       protoResp.Data.DataInfo.DbName,
+				TableName:    protoResp.Data.DataInfo.TableName,
+				ItemList:     itemList,
+				DataSourceId: protoResp.Data.DataInfo.DataSourceId,
+			}
+		}
+		
+		resp.Data = assetInfo
 	}
 
 	c.JSON(http.StatusOK, resp)

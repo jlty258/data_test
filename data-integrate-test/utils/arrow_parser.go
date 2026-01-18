@@ -10,7 +10,10 @@ import (
 
 // ParseArrowResponse 解析Arrow响应数据
 func ParseArrowResponse(data []byte) (arrow.Record, error) {
-	reader := ipc.NewReader(bytes.NewReader(data), ipc.WithAllocator(memory.NewGoAllocator()))
+	reader, err := ipc.NewReader(bytes.NewReader(data), ipc.WithAllocator(memory.NewGoAllocator()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create arrow reader: %w", err)
+	}
 	defer reader.Release()
 	
 	if !reader.Next() {
@@ -25,6 +28,11 @@ func ParseArrowResponse(data []byte) (arrow.Record, error) {
 
 // CountRowsFromArrow 从Arrow数据中统计行数
 func CountRowsFromArrow(data []byte) (int64, error) {
+	// 检查是否是EOF标记
+	if len(data) == 3 && string(data) == "EOF" {
+		return 0, nil // EOF标记，返回0行
+	}
+	
 	record, err := ParseArrowResponse(data)
 	if err != nil {
 		return 0, err
