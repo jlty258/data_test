@@ -259,3 +259,12 @@ func (c *DataServiceClient) Write(ctx context.Context, batches []*pb.WriteReques
 	return resp, nil
 }
 
+// ExecuteSql 执行SQL接口
+func (c *DataServiceClient) ExecuteSql(ctx context.Context, req *pb.ExecuteSqlRequest) (pb.DataSourceService_ExecuteSqlClient, error) {
+	stream, err := c.client.ExecuteSql(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("gRPC调用失败: %v", err)
+	}
+	return stream, nil
+}
+

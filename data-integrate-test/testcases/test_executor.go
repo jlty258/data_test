@@ -216,6 +216,18 @@ func (te *TestExecutor) executeTest(ctx context.Context, test TestConfig) *Singl
 			break
 		}
 		testResult = te.testRead(ctx, validator, test)
+	case "get_table_info":
+		testResult = te.testGetTableInfo(ctx, validator, test)
+	case "read_internal":
+		testResult = te.testReadInternalData(ctx, validator, test)
+	case "write_internal":
+		testResult = te.testWriteInternalData(ctx, validator, test)
+	case "execute_sql":
+		testResult = te.testExecuteSql(ctx, validator, test)
+	case "read_new":
+		testResult = te.testReadNew(ctx, validator, test)
+	case "write_new":
+		testResult = te.testWriteNew(ctx, validator, test)
 	default:
 		testResult.Passed = false
 		testResult.Error = fmt.Sprintf("未知的测试类型: %s", test.Type)
@@ -227,134 +239,6 @@ func (te *TestExecutor) executeTest(ctx context.Context, test TestConfig) *Singl
 	return testResult
 }
 
-// testRead 测试读取
-func (te *TestExecutor) testRead(
-	ctx context.Context,
-	validator *validators.RowCountValidator,
-	test TestConfig,
-) *SingleTestResult {
-	result := &SingleTestResult{
-		TestType:  "read",
-		Expected:  test.Expected,
-		StartTime: time.Now(),
-	}
-
-	// 调用data-service的ReadStreamingData接口
-	// 注意：ChainInfoId 必须与创建资产时使用的保持一致（test_chain_001）
-	// Alias 可以为空，但需要传递（data-service 会使用它）
-	req := &clients.StreamReadRequest{
-		AssetName:   te.assetName, // 使用资产英文名（AssetEnName）
-		ChainInfoId: "test_chain_001", // 与创建资产时的 ChainInfoId 保持一致
-		RequestId:   fmt.Sprintf("read_%d", time.Now().Unix()),
-		DbFields:    te.getFieldNames(),
-		Alias:       "", // 链账户别名，测试环境可以为空
-	}
-
-	readStart := time.Now()
-	responses, err := te.dataClient.ReadStreamingData(ctx, req)
-	readDuration := time.Since(readStart)
-
-	if err != nil {
-		result.Passed = false
-		result.Error = fmt.Errorf("调用data-service读取接口失败: %w", err).Error()
-		result.EndTime = time.Now()
-		result.Duration = result.EndTime.Sub(result.StartTime)
-		return result
-	}
-
-	// 统计行数（从所有Arrow响应中累计）
-	actualCount := int64(0)
-	for _, resp := range responses {
-		if resp != nil {
-			arrowBatch := resp.GetArrowBatch()
-			// 跳过EOF标记和空批次
-			if len(arrowBatch) == 0 {
-				continue
-			}
-			// 检查是否是EOF标记
-			if len(arrowBatch) == 3 && string(arrowBatch) == "EOF" {
-				continue // EOF标记，跳过
-			}
-			count, err := utils.CountRowsFromArrow(arrowBatch)
-			if err != nil {
-				result.Passed = false
-				result.Error = fmt.Errorf("解析Arrow数据失败: %w", err).Error()
-				result.EndTime = time.Now()
-				result.Duration = result.EndTime.Sub(result.StartTime)
-				return result
-			}
-			actualCount += count
-		}
-	}
-
-	// 验证行数
-	validationResult, err := validator.ValidateReadResult(ctx, actualCount)
-	if err != nil {
-		result.Passed = false
-		result.Error = err.Error()
-		result.EndTime = time.Now()
-		result.Duration = result.EndTime.Sub(result.StartTime)
-		return result
-	}
-
-	result.Passed = validationResult.Passed
-	result.Actual = validationResult.Actual
-	result.Diff = validationResult.Diff
-	result.DiffPercent = validationResult.DiffPercent
-	result.Message = fmt.Sprintf("%s (data-service调用耗时: %v)", validationResult.Message, readDuration)
-	result.EndTime = time.Now()
-	result.Duration = result.EndTime.Sub(result.StartTime)
-
-	return result
-}
-
-// testWrite 测试写入
-func (te *TestExecutor) testWrite(
-	ctx context.Context,
-	validator *validators.RowCountValidator,
-	test TestConfig,
-) *SingleTestResult {
-	result := &SingleTestResult{
-		TestType:  "write",
-		Expected:  test.Expected,
-		StartTime: time.Now(),
-	}
-
-	// 写入测试：先读取现有数据，然后通过data-service写入
-	// 注意：这里使用简化实现，实际应该生成新的测试数据并转换为Arrow格式写入
-	// 当前实现：验证当前表行数（写入功能需要Arrow数据生成，暂时保留TODO）
-	
-	// TODO: 完整实现写入测试
-	// 1. 生成测试数据（Arrow格式）
-	// 2. 调用data-service的WriteInternalData接口
-	// 3. 验证写入后的行数
-	
-	// 临时实现：验证当前表行数（作为写入测试的基础验证）
-	// 实际写入测试需要：
-	// - 从数据库读取数据并转换为Arrow格式
-	// - 或生成新的测试数据并转换为Arrow格式
-	// - 调用WriteInternalData写入
-	// - 验证写入后的行数
-	
-	validationResult, err := validator.ValidateWriteResult(ctx, te.strategy.GetDB(), te.tableName)
-	if err != nil {
-		result.Passed = false
-		result.Error = err.Error()
-		result.EndTime = time.Now()
-		result.Duration = result.EndTime.Sub(result.StartTime)
-		return result
-	}
-
-	result.Passed = validationResult.Passed
-	result.Actual = validationResult.Actual
-	result.Diff = validationResult.Diff
-	result.DiffPercent = validationResult.DiffPercent
-	result.Message = fmt.Sprintf("%s (注意：当前为简化实现，未实际调用data-service写入接口)", validationResult.Message)
-	result.EndTime = time.Now()
-	result.Duration = result.EndTime.Sub(result.StartTime)
-
-	return result
-}
 
 // registerToIDAService 注册到IDA-service
 func (te *TestExecutor) registerToIDAService(ctx context.Context) error {

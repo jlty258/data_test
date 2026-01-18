@@ -1,0 +1,58 @@
+name: "mysql_1k_all_interfaces"
+description: "MySQL 1K行 8字段 - 测试所有data-service接口"
+
+database:
+  type: "mysql"
+  # name 留空，使用配置中的默认数据库
+
+schema:
+  field_count: 8
+  max_field_size: 1024
+  table_name: "test_data"
+  asset_name: "test_data_asset"
+
+data:
+  row_count: 1000
+  use_snapshot: false
+
+tests:
+  # 1. ReadStreamingData 接口（旧版读接口）
+  - type: "read"
+    expected: 1000
+    tolerance: 0.1
+
+  # 2. GetTableInfo 接口
+  - type: "get_table_info"
+    expected: 1000
+    tolerance: 0.1
+
+  # 3. ReadInternalData 接口
+  - type: "read_internal"
+    expected: 1000
+    tolerance: 0.1
+
+  # 4. WriteInternalData 接口
+  - type: "write_internal"
+    expected: 1000
+    tolerance: 0.1
+
+  # 5. ExecuteSql 接口
+  - type: "execute_sql"
+    expected: 1000
+    tolerance: 0.1
+    params:
+      sql: "SELECT * FROM test_data"
+
+  # 6. Read 接口（新版通用读接口）
+  - type: "read_new"
+    expected: 1000
+    tolerance: 0.1
+
+  # 7. Write 接口（新版通用写接口）
+  - type: "write_new"
+    expected: 1000
+    tolerance: 0.1
+    params:
+      target_db: "mira_task_tmp"
+      target_table: "test_write_new_table"
+
