@@ -55,8 +55,8 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # 设置工作目录
 WORKDIR /app
 
-# 从builder阶段复制二进制文件（先删除可能存在的同名目录）
-RUN rm -rf /app/data-integrate-test
+# 从builder阶段复制二进制文件（先删除可能存在的同名目录或文件）
+RUN rm -rf /app/data-integrate-test /app/manage-ida /app/query-ida /app/test-clients
 COPY --from=builder /build/data-integrate-test /app/data-integrate-test
 COPY --from=builder /build/manage-ida /app/manage-ida
 COPY --from=builder /build/query-ida /app/query-ida

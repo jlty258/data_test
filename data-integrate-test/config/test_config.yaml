@@ -13,7 +13,7 @@ mock_services:
 databases:
   - name: "mysql_test"
     type: "mysql"
-    host: "mysql"  # Docker 网络中使用服务名
+    host: "mysql-test"  # Docker 网络中使用容器名（mysql-test）
     port: 3306
     user: "root"
     password: "password"
@@ -44,7 +44,7 @@ databases:
     database: "test_db"
 
 minio:
-  endpoint: "localhost:9000"
+  endpoint: "minio:9000"  # Docker 网络中使用服务名
   access_key: "minioadmin"
   secret_key: "minioadmin"
   bucket: "test-bucket"

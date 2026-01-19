@@ -48,3 +48,8 @@ reports/*.json
 bin/
 dist/
 build/
+
+# Docker images
+docker-images-all.zip
+docker-images/
+*.tar

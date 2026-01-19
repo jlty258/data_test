@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"data-integrate-test/clients"
 	"data-integrate-test/validators"
 
 	pb "data-integrate-test/generated/datasource"

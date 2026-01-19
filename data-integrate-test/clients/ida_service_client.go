@@ -59,6 +59,17 @@ type CreateAssetRequest struct {
 	DataSourceId int32
 	DBName       string
 	TableName    string
+	Columns      []TableColumn // 列信息（可选）
+}
+
+// TableColumn 表列信息
+type TableColumn struct {
+	Name        string
+	DataType    string
+	DataLength  int32
+	Description string
+	PrimaryKey  bool
+	NotNull     bool
 }
 
 // CreateAssetResponse 创建资产响应
@@ -131,7 +142,7 @@ func (c *IDAServiceClient) CreateAsset(ctx context.Context, req *CreateAssetRequ
 		Table: &pb.Table{
 			DataSourceId: req.DataSourceId,
 			TableName:    req.TableName,
-			Columns:      []*pb.TableColumn{}, // 可以为空
+			Columns:      convertColumnsToProto(req.Columns),
 		},
 	}
 	
@@ -463,3 +474,32 @@ func (c *IDAServiceClient) GetPrivateAssetInfo(ctx context.Context, req *GetPriv
 	return result, nil
 }
 
+// convertColumnsToProto 将列信息转换为proto格式
+func convertColumnsToProto(columns []TableColumn) []*pb.TableColumn {
+	if len(columns) == 0 {
+		return []*pb.TableColumn{}
+	}
+	
+	protoColumns := make([]*pb.TableColumn, len(columns))
+	for i, col := range columns {
+		primaryKey := int32(0)
+		if col.PrimaryKey {
+			primaryKey = 1
+		}
+		notNull := int32(0)
+		if col.NotNull {
+			notNull = 1
+		}
+		protoColumns[i] = &pb.TableColumn{
+			OriginName:  col.Name,
+			Name:        col.Name,
+			DataType:    col.DataType,
+			DataLength:  col.DataLength,
+			Description: col.Description,
+			PrimaryKey:  primaryKey,
+			NotNull:     notNull,
+			Level:       0, // 默认值
+		}
+	}
+	return protoColumns
+}

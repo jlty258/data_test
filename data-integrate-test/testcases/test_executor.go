@@ -6,7 +6,6 @@ import (
 	"data-integrate-test/generators"
 	"data-integrate-test/isolation"
 	"data-integrate-test/strategies"
-	"data-integrate-test/utils"
 	"data-integrate-test/validators"
 	"fmt"
 	"time"
@@ -228,6 +227,8 @@ func (te *TestExecutor) executeTest(ctx context.Context, test TestConfig) *Singl
 		testResult = te.testReadNew(ctx, validator, test)
 	case "write_new":
 		testResult = te.testWriteNew(ctx, validator, test)
+	case "import_data":
+		testResult = te.testImportData(ctx, validator, test)
 	default:
 		testResult.Passed = false
 		testResult.Error = fmt.Sprintf("未知的测试类型: %s", test.Type)
@@ -280,13 +281,29 @@ func (te *TestExecutor) registerToIDAService(ctx context.Context) error {
 	te.dataSourceId = dsResp.DataSourceId
 	fmt.Printf("数据源创建成功: ID=%d\n", te.dataSourceId)
 
-	// 2. 创建资产
+	// 2. 创建资产（传递列信息）
+	var columns []clients.TableColumn
+	if te.schema != nil && len(te.schema.Fields) > 0 {
+		columns = make([]clients.TableColumn, len(te.schema.Fields))
+		for i, field := range te.schema.Fields {
+			columns[i] = clients.TableColumn{
+				Name:        field.Name,
+				DataType:    field.SQLType,
+				DataLength:  0, // 根据实际需要设置
+				Description: fmt.Sprintf("字段 %s", field.Name),
+				PrimaryKey:  field.Name == "id",
+				NotNull:     !field.Nullable,
+			}
+		}
+	}
+	
 	createAssetReq := &clients.CreateAssetRequest{
 		AssetName:    te.template.Name,
 		AssetEnName:  te.assetName,
 		DataSourceId: te.dataSourceId,
 		DBName:       dbConfig.Database,
 		TableName:    te.tableName,
+		Columns:      columns,
 	}
 
 	assetResp, err := te.idaClient.CreateAsset(ctx, createAssetReq)

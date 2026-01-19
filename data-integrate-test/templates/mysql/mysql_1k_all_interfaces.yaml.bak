@@ -56,11 +56,3 @@ tests:
       target_db: "mira_task_tmp"
       target_table: "test_write_new_table"
 
-  # 8. ImportData 接口（导入数据到Doris）
-  - type: "import_data"
-    expected: 1000
-    tolerance: 0.1
-    params:
-      target_db: "mira_task_tmp"
-      target_table: "test_import_table"
-

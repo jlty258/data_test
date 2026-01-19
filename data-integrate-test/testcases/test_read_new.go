@@ -5,12 +5,63 @@ import (
 	"fmt"
 	"time"
 
-	"data-integrate-test/clients"
+	"data-integrate-test/config"
 	"data-integrate-test/utils"
 	"data-integrate-test/validators"
 
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+
 	pb "data-integrate-test/generated/datasource"
 )
+
+// ensureMinIOBucket 确保MinIO bucket存在，如果不存在则创建
+func (te *TestExecutor) ensureMinIOBucket(ctx context.Context, bucketName string) error {
+	// 从配置中获取MinIO连接信息
+	// 配置文件路径：config/test_config.yaml
+	cfg, err := config.LoadConfig("config/test_config.yaml")
+	if err != nil {
+		return fmt.Errorf("加载配置失败: %w", err)
+	}
+
+	// 解析endpoint（格式：host:port）
+	// 在Docker网络中，MinIO服务名是 "minio"
+	endpoint := cfg.MinIO.Endpoint
+	// 如果endpoint是localhost，替换为Docker网络中的服务名
+	if endpoint == "localhost:9000" {
+		endpoint = "minio:9000"
+	}
+	accessKey := cfg.MinIO.AccessKey
+	secretKey := cfg.MinIO.SecretKey
+
+	// 创建MinIO客户端
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: false, // MinIO默认使用HTTP
+	})
+	if err != nil {
+		return fmt.Errorf("创建MinIO客户端失败: %w", err)
+	}
+
+	// 检查bucket是否存在
+	exists, err := minioClient.BucketExists(ctx, bucketName)
+	if err != nil {
+		return fmt.Errorf("检查bucket是否存在失败: %w", err)
+	}
+
+	// 如果bucket不存在，创建它
+	if !exists {
+		err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
+		if err != nil {
+			return fmt.Errorf("创建bucket失败: %w", err)
+		}
+		fmt.Printf("MinIO bucket '%s' 已创建\n", bucketName)
+	} else {
+		fmt.Printf("MinIO bucket '%s' 已存在\n", bucketName)
+	}
+
+	return nil
+}
 
 // testReadNew 测试新版通用读接口
 func (te *TestExecutor) testReadNew(
@@ -24,8 +75,16 @@ func (te *TestExecutor) testReadNew(
 		StartTime: time.Now(),
 	}
 
-	// 获取数据库配置
-	dbConfig := te.strategy.GetConnectionInfo()
+	// 在执行测试前，先检查并创建MinIO bucket
+	// read_new接口会将数据导出到MinIO，需要bucket存在
+	bucketName := "data-service" // 使用data-service的默认bucket名称
+	if err := te.ensureMinIOBucket(ctx, bucketName); err != nil {
+		result.Passed = false
+		result.Error = fmt.Errorf("确保MinIO bucket存在失败: %w", err).Error()
+		result.EndTime = time.Now()
+		result.Duration = result.EndTime.Sub(result.StartTime)
+		return result
+	}
 
 	// 构建外部数据源
 	externalDS := &pb.ExternalDataSource{

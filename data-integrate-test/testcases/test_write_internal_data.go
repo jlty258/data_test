@@ -5,10 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"time"
 
 	"data-integrate-test/clients"
-	"data-integrate-test/utils"
 	"data-integrate-test/validators"
 
 	"github.com/apache/arrow/go/v15/arrow"
@@ -29,9 +29,6 @@ func (te *TestExecutor) testWriteInternalData(
 		StartTime: time.Now(),
 	}
 
-	// 获取数据库配置
-	dbConfig := te.strategy.GetConnectionInfo()
-
 	// 1. 从数据库读取数据并转换为Arrow格式
 	arrowBatch, err := te.readDataAsArrow(ctx)
 	if err != nil {
@@ -43,10 +40,13 @@ func (te *TestExecutor) testWriteInternalData(
 	}
 
 	// 2. 调用data-service的WriteInternalData接口
-	// 写入到内置数据库（Doris）的临时表
+	// 注意：WriteInternalData 使用配置的数据库（MySQL），不是Doris
+	// 它使用 request.DbName 作为数据库名，但连接的是配置的MySQL
+	dbConfig := te.strategy.GetConnectionInfo()
+	
 	writeReq := &clients.WriteInternalDataRequest{
 		ArrowBatch:    arrowBatch,
-		DbName:        "mira_task_tmp", // Doris临时数据库
+		DbName:        dbConfig.Database, // 使用MySQL数据库名
 		TableName:     fmt.Sprintf("test_write_%s_%d", te.tableName, time.Now().Unix()),
 		JobInstanceId: fmt.Sprintf("write_job_%d", time.Now().Unix()),
 	}
@@ -235,12 +235,41 @@ func appendValueToArrowBuilder(builder array.Builder, val interface{}) error {
 		default:
 			return fmt.Errorf("无法将 %T 转换为 int64", val)
 		}
+	case *array.Float32Builder:
+		switch v := val.(type) {
+		case float32:
+			b.Append(v)
+		case float64:
+			b.Append(float32(v))
+		case int:
+			b.Append(float32(v))
+		case int64:
+			b.Append(float32(v))
+		case int32:
+			b.Append(float32(v))
+		default:
+			return fmt.Errorf("无法将 %T 转换为 float32", val)
+		}
 	case *array.Float64Builder:
 		switch v := val.(type) {
 		case float64:
 			b.Append(v)
 		case float32:
 			b.Append(float64(v))
+		case int:
+			b.Append(float64(v))
+		case int64:
+			b.Append(float64(v))
+		case int32:
+			b.Append(float64(v))
+		case []uint8: // MySQL 返回的 DECIMAL/NUMERIC 类型
+			// 尝试将 []uint8 转换为字符串，再转换为 float64
+			strVal := string(v)
+			if fVal, err := strconv.ParseFloat(strVal, 64); err == nil {
+				b.Append(fVal)
+			} else {
+				return fmt.Errorf("无法将 []uint8 (%s) 转换为 float64: %w", strVal, err)
+			}
 		default:
 			return fmt.Errorf("无法将 %T 转换为 float64", val)
 		}

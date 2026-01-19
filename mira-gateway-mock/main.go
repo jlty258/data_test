@@ -61,13 +61,14 @@ type GetPrivateAssetInfoByEnNameRequest struct {
 }
 
 // SaveTableColumnItem 数据表字段信息
+// 注意：JSON 标签需要匹配 data-service 的期望格式（下划线格式）
 type SaveTableColumnItem struct {
 	Name        string `json:"name"`
-	DataType    string `json:"dataType"`
-	DataLength  int32  `json:"dataLength"`
+	DataType    string `json:"data_type"`
+	DataLength  int32  `json:"data_length"`
 	Description string `json:"description"`
-	IsPrimaryKey int32 `json:"isPrimaryKey"`
-	PrivacyQuery int32 `json:"privacyQuery"`
+	IsPrimaryKey int32 `json:"is_primary_key"`
+	PrivacyQuery int32 `json:"privacy_query"`
 }
 
 // DataInfo 数据库信息

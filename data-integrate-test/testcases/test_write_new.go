@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"data-integrate-test/clients"
 	"data-integrate-test/validators"
 
 	pb "data-integrate-test/generated/datasource"
@@ -22,9 +21,6 @@ func (te *TestExecutor) testWriteNew(
 		Expected:  test.Expected,
 		StartTime: time.Now(),
 	}
-
-	// 获取数据库配置
-	dbConfig := te.strategy.GetConnectionInfo()
 
 	// 1. 从数据库读取数据并转换为Arrow格式
 	arrowBatch, err := te.readDataAsArrow(ctx)

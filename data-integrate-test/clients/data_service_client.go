@@ -268,3 +268,12 @@ func (c *DataServiceClient) ExecuteSql(ctx context.Context, req *pb.ExecuteSqlRe
 	return stream, nil
 }
 
+// ImportData 导入数据接口
+func (c *DataServiceClient) ImportData(ctx context.Context, req *pb.ImportDataRequest) (*pb.ImportDataResponse, error) {
+	resp, err := c.client.ImportData(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("gRPC调用失败: %v", err)
+	}
+	return resp, nil
+}
+

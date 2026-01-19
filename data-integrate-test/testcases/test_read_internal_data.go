@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"data-integrate-test/clients"
 	"data-integrate-test/utils"
 	"data-integrate-test/validators"
 
@@ -24,15 +23,27 @@ func (te *TestExecutor) testReadInternalData(
 		StartTime: time.Now(),
 	}
 
+	// ReadInternalData 需要数据已经写入到内置数据库
+	// 如果表不存在，跳过测试并提示
+	// 注意：实际使用中，应该先通过 WriteInternalData 写入数据
+
+	// ReadInternalData 需要从内置数据库读取
+	// 注意：ReadInternalData 使用配置的数据库（MySQL），不是Doris
+	// 它使用 request.DbName 作为数据库名，但连接的是配置的MySQL
+	// 表名格式为 jobInstanceId_tableName（如果提供了 JobInstanceId）
+	// 实际使用中，应该先通过 WriteInternalData 写入数据到内置数据库
+	
 	// 获取数据库配置
 	dbConfig := te.strategy.GetConnectionInfo()
-
+	
 	// 调用data-service的ReadInternalData接口
+	// 注意：ReadInternalData 会连接到配置的MySQL数据库，使用 request.DbName 作为数据库名
+	// 如果表不存在，这个测试会失败（这是预期的，需要先写入数据）
 	req := &pb.InternalReadRequest{
 		TableName:     te.tableName,
-		DbName:        dbConfig.Database,
+		DbName:        dbConfig.Database, // 使用MySQL数据库名
 		DbFields:      te.getFieldNames(),
-		JobInstanceId: fmt.Sprintf("job_%d", time.Now().Unix()),
+		JobInstanceId: "", // 不提供 JobInstanceId，直接使用表名
 	}
 
 	readStart := time.Now()
