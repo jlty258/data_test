@@ -1,0 +1,72 @@
+# 示例：单工具镜像 Dockerfile
+# 仅包含 export-table 工具，用于生产环境或 Kubernetes Job
+# 
+# 使用方法：
+#   docker build -f Dockerfile.export-table.example -t data-integrate-test-export-table:latest .
+#   docker run --rm data-integrate-test-export-table:latest -db=mysql -dbname=test -table=users -output=/tmp
+
+# 构建阶段
+FROM golang:latest AS builder
+
+# 配置Go依赖环境
+RUN go env -w GO111MODULE=on && \
+    go env -w GOPROXY=https://goproxy.cn,direct
+
+# 安装必要的构建工具
+RUN apt-get update && \
+    apt-get install -y -qq \
+    protobuf-compiler && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# 安装 protobuf Go 插件
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+# 设置工作目录
+WORKDIR /build
+
+# 复制依赖文件（利用 Docker 缓存层）
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 复制项目源文件
+COPY . .
+
+# 只编译 export-table 工具
+RUN CGO_ENABLED=0 go build -ldflags '-w -s' -o /build/bin/export-table ./cmd/export_table/main.go
+
+# 运行阶段（最小化镜像）
+FROM ubuntu:22.04
+
+# 安装运行时依赖
+RUN apt-get update && \
+    apt-get install -y -qq \
+    ca-certificates \
+    tzdata && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# 设置时区
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 设置工作目录
+WORKDIR /app
+
+# 只复制 export-table 工具
+COPY --from=builder /build/bin/export-table /app/export-table
+
+# 复制配置文件和模板文件（如果需要）
+COPY --from=builder /build/config /app/config
+COPY --from=builder /build/templates /app/templates
+
+# 创建必要的目录
+RUN mkdir -p /app/snapshots /app/reports && \
+    chmod +x /app/export-table
+
+# 设置入口点
+ENTRYPOINT ["/app/export-table"]
+
+# 默认参数（可以通过 docker run 覆盖）
+# CMD ["-help"]

@@ -5,12 +5,18 @@
 *.so
 *.dylib
 data-integrate-test
+bin/
 
 # Test binary
 *.test
 
 # Output of the go coverage tool
 *.out
+coverage.html
+coverage.out
+
+# Test results
+test-results/
 
 # Dependency directories
 vendor/

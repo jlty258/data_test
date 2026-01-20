@@ -20,13 +20,8 @@ WORKDIR /build
 # 拷贝go mod文件（利用 Docker 缓存层）
 COPY go.mod go.sum ./
 
-# 先尝试下载依赖（如果 vendor 不存在）
-# 如果 vendor 存在，后续会优先使用 vendor
+# 下载依赖
 RUN go mod download
-
-# 复制 vendor 目录（如果存在，优先使用本地依赖）
-# 注意：需要先运行 go mod vendor 生成 vendor 目录
-COPY vendor ./vendor
 
 # 拷贝proto文件
 COPY proto/ ./proto/
@@ -48,9 +43,8 @@ RUN go mod tidy
 # 拷贝存储层代码
 COPY storage/ ./storage/
 
-# 构建应用（使用 vendor 模式，如果 vendor 存在）
-# -mod=vendor 会优先使用 vendor 目录中的依赖，避免网络下载
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=vendor -o ida-access-service-mock .
+# 构建应用
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ida-access-service-mock .
 
 # 运行阶段：使用alpine减小镜像大小
 FROM alpine:latest

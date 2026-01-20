@@ -105,15 +105,29 @@ services:
       - MIRA_GATEWAY_HOST_PORT=8080
       - IDA_MANAGE_HOST=ida-access-service-mock
       - IDA_MANAGE_PORT=9091
-      # 数据库配置（使用docker服务名）
+      # 数据库配置（使用docker服务名，匹配MySQL容器配置）
       - MYSQL_HOST=${MYSQL_HOST:-mysql}
       - MYSQL_PORT=${MYSQL_PORT:-3306}
+      - MYSQL_USER=${MYSQL_USER:-root}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-password}
+      - MYSQL_DATABASE=${MYSQL_DATABASE:-test_db}
       # OSS配置（使用docker服务名）
       - MINIO_HOST=${MINIO_HOST:-minio}
       - MINIO_PORT=${MINIO_PORT:-9000}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      # Doris配置（使用docker服务名）
+      - DORIS_HOST=${DORIS_HOST:-doris-fe}
+      - DORIS_PORT=${DORIS_PORT:-9030}
+      - DORIS_USER=${DORIS_USER:-root}
+      - DORIS_PASSWORD=${DORIS_PASSWORD:-}
+      - DORIS_DATABASE=${DORIS_DATABASE:-}
+      # 日志级别
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     volumes:
-      # 挂载配置文件（使用 Docker 服务名）
-      - ./mira-data-service-server/config/config.yaml:/home/workspace/config/config.yaml:ro
+      # 挂载配置文件目录（如果宿主机有配置文件则使用，否则由entrypoint.sh生成）
+      # 注意：如果挂载文件而不是目录，需要确保文件存在，否则会创建为目录
+      - ./mira-data-service-server/config:/home/workspace/config
       # 如果需要挂载日志
       - ./mira-data-service-server/logs:/home/workspace/logs
     depends_on:
@@ -229,5 +243,8 @@ volumes:
 networks:
   mock-services:
     name: data-service-test_mock-services
-    external: true
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 

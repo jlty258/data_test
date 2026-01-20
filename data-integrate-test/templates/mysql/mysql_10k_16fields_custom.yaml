@@ -17,10 +17,55 @@ data:
   keep_table: true
 
 tests:
+  # 1. ReadStreamingData 接口（旧版读接口）
   - type: "read"
     expected: 10000
     tolerance: 0.1
-  
-  - type: "write"
+
+  # 2. GetTableInfo 接口
+  - type: "get_table_info"
     expected: 10000
     tolerance: 0.1
+
+  # 3. ReadInternalData 接口
+  - type: "read_internal"
+    expected: 10000
+    tolerance: 0.1
+
+  # 4. WriteInternalData 接口
+  - type: "write_internal"
+    expected: 10000
+    tolerance: 0.1
+
+
+  - type: "import_data"
+    expected: 10000
+    tolerance: 0.1
+    params:
+      target_db: "mira_task_tmp"
+      target_table: "test_10k_16f"
+
+
+  # 5. ExecuteSql 接口
+  - type: "execute_sql"
+    expected: 10000
+    tolerance: 0.1
+    params:
+      sql: "SELECT * FROM test_10k_16f"
+
+  # 6. Read 接口（新版通用读接口）
+  - type: "read_new"
+    expected: 10000
+    tolerance: 0.1
+
+  # 7. Write 接口（新版通用写接口）
+  - type: "write_new"
+    expected: 10000
+    tolerance: 0.1
+    params:
+      target_db: "mira_task_tmp"
+      target_table: "test_write_new_table_10k_16f"
+
+  # 8. ImportData 接口（导入数据到Doris）
+  
+

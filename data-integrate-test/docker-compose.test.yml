@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      # 挂载源代码以便查看测试结果
+      - .:/build
+      # 挂载覆盖率报告输出目录
+      - ./test-results:/build/test-results
+    environment:
+      - CGO_ENABLED=0
+    command: make test
+    # 如果需要生成覆盖率报告，可以使用：
+    # command: make test-coverage

@@ -7,8 +7,9 @@
 - ✅ 创建数据源
 - ✅ 创建资产
 - ✅ 查询数据源详情
-- ✅ 查询资产列表
+- ✅ 查询资产列表（支持分页）
 - ✅ 查询资产详情
+- ✅ 查询所有（资产列表和关联的数据源）
 
 ## 使用方法
 
@@ -55,17 +56,30 @@ go run cmd/manage_ida/main.go -action query-asset
 go run cmd/manage_ida/main.go -action query-asset -asset-id 2000
 ```
 
+### 7. 查询所有（资产列表和关联的数据源）
+
+```bash
+# 使用默认分页（第1页，每页10条）
+go run cmd/manage_ida/main.go -action query-all
+
+# 指定分页参数
+go run cmd/manage_ida/main.go -action query-all -page=1 -size=20
+```
+
 ## 参数说明
 
 - `-config`: 配置文件路径（默认: `config/test_config.yaml`）
 - `-action`: 操作类型
-  - `all`: 执行全部操作
+  - `all`: 执行全部操作（创建数据源 -> 创建资产 -> 查询）
   - `create-ds`: 创建数据源
   - `create-asset`: 创建资产
-  - `query-ds`: 查询数据源
-  - `query-asset`: 查询资产（不指定asset-id时查询列表）
+  - `query-ds`: 查询数据源详情（需要 -ds-id）
+  - `query-asset`: 查询资产（不指定 -asset-id 时查询列表，支持 -page 和 -size）
+  - `query-all`: 查询所有（资产列表和关联的数据源，支持 -page 和 -size）
 - `-ds-id`: 数据源ID（创建资产或查询数据源时使用）
 - `-asset-id`: 资产ID（查询资产详情时使用）
+- `-page`: 页码（查询资产列表时使用，默认: 1）
+- `-size`: 每页条数（查询资产列表时使用，默认: 10）
 
 ## 示例输出
 

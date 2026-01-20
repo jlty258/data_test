@@ -148,18 +148,39 @@ func (g *DataGenerator) generateValue(field FieldType, rowID int64) interface{} 
 
 	sqlType := strings.ToUpper(field.SQLType)
 
-	// 整数类型
+	// 整数类型（按顺序检查，从最具体到最通用）
 	if strings.Contains(sqlType, "TINYINT") {
-		return int8(mathrand.Intn(256) - 128)
+		// TINYINT: -128 to 127 (signed) or 0 to 255 (unsigned)
+		// 为了安全，生成 0-127 的值，兼容有符号和无符号
+		if strings.Contains(strings.ToUpper(sqlType), "UNSIGNED") {
+			return uint8(mathrand.Intn(256))
+		}
+		return int8(mathrand.Intn(128)) // 0-127，避免负数
 	}
 	if strings.Contains(sqlType, "SMALLINT") {
-		return int16(mathrand.Intn(65536) - 32768)
+		// SMALLINT: -32768 to 32767 (signed) or 0 to 65535 (unsigned)
+		if strings.Contains(strings.ToUpper(sqlType), "UNSIGNED") {
+			return uint16(mathrand.Intn(65536))
+		}
+		return int16(mathrand.Intn(32768)) // 0-32767，避免负数
 	}
-	if strings.Contains(sqlType, "INT") && !strings.Contains(sqlType, "BIGINT") {
-		return mathrand.Int31()
+	if strings.Contains(sqlType, "MEDIUMINT") {
+		// MEDIUMINT: -8388608 to 8388607 (signed) or 0 to 16777215 (unsigned)
+		if strings.Contains(strings.ToUpper(sqlType), "UNSIGNED") {
+			return int32(mathrand.Intn(16777216))
+		}
+		return int32(mathrand.Intn(8388608)) // 0-8388607，避免负数
 	}
 	if strings.Contains(sqlType, "BIGINT") {
-		return mathrand.Int63()
+		// BIGINT: 使用正数范围避免溢出
+		return mathrand.Int63n(9223372036854775807) + 1 // 1 to 9223372036854775807
+	}
+	if strings.Contains(sqlType, "INT") {
+		// INT: -2147483648 to 2147483647 (signed) or 0 to 4294967295 (unsigned)
+		if strings.Contains(strings.ToUpper(sqlType), "UNSIGNED") {
+			return int64(mathrand.Intn(4294967296))
+		}
+		return int32(mathrand.Intn(2147483648)) // 0-2147483647，避免负数
 	}
 
 	// 浮点数类型
@@ -183,10 +204,19 @@ func (g *DataGenerator) generateValue(field FieldType, rowID int64) interface{} 
 		if size == 0 {
 			size = 255 // 默认值
 		}
+		// 确保size不超过1024（模板中max_field_size的限制）
+		if size > 1024 {
+			size = 1024
+		}
 		// 生成随机字符串，大小可变（1到size字节），但不超过字段定义的长度
+		// 使用size而不是size+1，确保不超过限制
 		actualSize := mathrand.Intn(size) + 1
 		if actualSize > size {
 			actualSize = size
+		}
+		// 再次确保不超过限制（防止边界情况）
+		if actualSize < 1 {
+			actualSize = 1
 		}
 		return g.generateRandomString(actualSize)
 	}
@@ -271,10 +301,25 @@ func (g *DataGenerator) getPlaceholders() string {
 func (g *DataGenerator) extractSizeFromSQLType(sqlType string) int {
 	// 提取 VARCHAR(100) 或 CHAR(100) 中的数字
 	var size int
-	if strings.Contains(sqlType, "VARCHAR") {
-		fmt.Sscanf(sqlType, "VARCHAR(%d)", &size)
-	} else if strings.Contains(sqlType, "CHAR") {
-		fmt.Sscanf(sqlType, "CHAR(%d)", &size)
+	sqlTypeUpper := strings.ToUpper(sqlType)
+	if strings.Contains(sqlTypeUpper, "VARCHAR") {
+		// 匹配 VARCHAR(数字) 或 VARCHAR(数字) UNSIGNED 等
+		if n, err := fmt.Sscanf(sqlType, "VARCHAR(%d", &size); n == 1 && err == nil {
+			return size
+		}
+		// 尝试匹配大小写不敏感的情况
+		if n, err := fmt.Sscanf(sqlTypeUpper, "VARCHAR(%d", &size); n == 1 && err == nil {
+			return size
+		}
+	} else if strings.Contains(sqlTypeUpper, "CHAR") && !strings.Contains(sqlTypeUpper, "VARCHAR") {
+		// CHAR类型（排除VARCHAR）
+		if n, err := fmt.Sscanf(sqlType, "CHAR(%d", &size); n == 1 && err == nil {
+			return size
+		}
+		// 尝试匹配大小写不敏感的情况
+		if n, err := fmt.Sscanf(sqlTypeUpper, "CHAR(%d", &size); n == 1 && err == nil {
+			return size
+		}
 	}
 	return size
 }

@@ -39,6 +39,9 @@ func NewDatabaseStrategyFactory() *DatabaseStrategyFactory {
 }
 
 func (f *DatabaseStrategyFactory) CreateStrategy(dbConfig *config.DatabaseConfig) (DatabaseStrategy, error) {
+	if dbConfig == nil {
+		return nil, fmt.Errorf("database config cannot be nil")
+	}
 	switch dbConfig.Type {
 	case "mysql":
 		return NewMySQLStrategy(dbConfig), nil

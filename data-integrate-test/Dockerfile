@@ -27,15 +27,14 @@ COPY go.mod go.sum ./
 # 下载依赖（利用缓存，依赖不常变化）
 RUN go mod download
 
-# 复制项目源文件
+# 复制项目源文件（包括 Makefile）
 COPY . .
 
-# 编译所有程序（禁用 CGO，纯 Go 编译）
-# 使用 -ldflags '-w -s' 减小二进制体积（去除调试信息和符号表）
-RUN CGO_ENABLED=0 go build -ldflags '-w -s' -o data-integrate-test ./main.go && \
-    CGO_ENABLED=0 go build -ldflags '-w -s' -o manage-ida ./cmd/manage_ida/main.go && \
-    CGO_ENABLED=0 go build -ldflags '-w -s' -o query-ida ./cmd/query_ida/main.go && \
-    CGO_ENABLED=0 go build -ldflags '-w -s' -o test-clients ./cmd/test_clients/main.go
+# 创建输出目录
+RUN mkdir -p bin
+
+# 编译主程序（先只编译主程序，其他工具可以后续添加）
+RUN CGO_ENABLED=0 go build -ldflags '-w -s' -o bin/data-integrate-test .
 
 # 第二阶段，运行镜像
 FROM ubuntu:22.04
@@ -55,12 +54,16 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 # 设置工作目录
 WORKDIR /app
 
-# 从builder阶段复制二进制文件（先删除可能存在的同名目录或文件）
-RUN rm -rf /app/data-integrate-test /app/manage-ida /app/query-ida /app/test-clients
-COPY --from=builder /build/data-integrate-test /app/data-integrate-test
-COPY --from=builder /build/manage-ida /app/manage-ida
-COPY --from=builder /build/query-ida /app/query-ida
-COPY --from=builder /build/test-clients /app/test-clients
+# 从builder阶段复制二进制文件（只复制已构建的）
+RUN rm -rf /app/data-integrate-test /app/manage-ida /app/test-clients /app/export-table /app/import-table /app/export-snapshots /app/import-snapshots
+COPY --from=builder /build/bin/data-integrate-test /app/data-integrate-test
+# 其他工具暂时不复制，如需要可以后续添加
+# COPY --from=builder /build/bin/manage-ida /app/manage-ida
+# COPY --from=builder /build/bin/test-clients /app/test-clients
+# COPY --from=builder /build/bin/export-table /app/export-table
+# COPY --from=builder /build/bin/import-table /app/import-table
+# COPY --from=builder /build/bin/export-snapshots /app/export-snapshots
+# COPY --from=builder /build/bin/import-snapshots /app/import-snapshots
 
 # 复制配置文件和模板文件
 COPY --from=builder /build/config /app/config
@@ -68,8 +71,17 @@ COPY --from=builder /build/templates /app/templates
 
 # 创建必要的目录并设置可执行权限（合并命令减少层数）
 RUN mkdir -p /app/snapshots /app/reports && \
-    chmod +x /app/data-integrate-test /app/manage-ida /app/query-ida /app/test-clients
+    chmod +x /app/data-integrate-test
+
+# 复制入口点脚本
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# 使用入口点脚本，支持多种使用方式：
+# 1. docker run <image> /app/export-table ... (直接指定工具)
+# 2. docker run <image> export-table ... (使用工具名，脚本会自动查找)
+# 3. docker run <image> (显示帮助信息)
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 # 默认运行主程序（可以通过 docker run 覆盖）
-ENTRYPOINT ["/app/data-integrate-test"]
-CMD ["-template", "templates/mysql/mysql_1m_8fields.yaml"]
+CMD ["/app/data-integrate-test", "-template", "templates/mysql/mysql_1m_8fields.yaml"]

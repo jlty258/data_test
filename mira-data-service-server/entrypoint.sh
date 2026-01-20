@@ -26,8 +26,21 @@ DORIS_DATABASE=${DORIS_DATABASE:-}
 
 LOG_LEVEL=${LOG_LEVEL:-info}
 
-# 生成 config.yaml
-cat > /home/workspace/config/config.yaml << EOF
+# 检查配置文件是否已存在（可能由宿主机挂载）
+CONFIG_FILE="/home/workspace/config/config.yaml"
+if [ -f "$CONFIG_FILE" ]; then
+    echo "=========================================="
+    echo "Using existing config file: $CONFIG_FILE"
+    echo "=========================================="
+    cat "$CONFIG_FILE"
+    echo "=========================================="
+else
+    echo "=========================================="
+    echo "Config file not found, generating from environment variables"
+    echo "=========================================="
+    
+    # 生成 config.yaml
+    cat > "$CONFIG_FILE" << EOF
 oss:
   type: "minio"
   host: "${MINIO_HOST}"
@@ -96,15 +109,14 @@ doris:
   s3_export_connection_timeout: 60
   s3_export_connection_maximum: 10
 EOF
-
-echo "=========================================="
-echo "Config file generated from environment variables"
-echo "=========================================="
-echo "MySQL: ${MYSQL_USER}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}"
-echo "MinIO: ${MINIO_HOST}:${MINIO_PORT}"
-echo "Doris: ${DORIS_USER}@${DORIS_HOST}:${DORIS_PORT}/${DORIS_DATABASE}"
-echo "Log Level: ${LOG_LEVEL}"
-echo "=========================================="
+    
+    echo "Config file generated at $CONFIG_FILE"
+    echo "MySQL: ${MYSQL_USER}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}"
+    echo "MinIO: ${MINIO_HOST}:${MINIO_PORT}"
+    echo "Doris: ${DORIS_USER}@${DORIS_HOST}:${DORIS_PORT}/${DORIS_DATABASE}"
+    echo "Log Level: ${LOG_LEVEL}"
+    echo "=========================================="
+fi
 
 # 启动服务
 # 如果 dataserver 在 /home/workspace/bin/ 目录，使用完整路径

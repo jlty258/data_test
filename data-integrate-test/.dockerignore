@@ -43,7 +43,7 @@ data-integrate-test/snapshots/
 Thumbs.db
 
 # Docker 相关
-Dockerfile*
+# 注意：entrypoint.sh 需要包含在镜像中，所以不排除
 .dockerignore
 docker-compose*.yml
 
