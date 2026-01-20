@@ -22,7 +22,18 @@ type DataServiceClient struct {
 // NewDataServiceClient 创建Data Service客户端
 func NewDataServiceClient(host string, port int) (*DataServiceClient, error) {
 	addr := fmt.Sprintf("%s:%d", host, port)
-	conn, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	
+	// 设置 gRPC 消息大小限制为 500MB（与服务器端保持一致）
+	const maxMessageSize = 500 * 1024 * 1024 // 500MB
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallRecvMsgSize(maxMessageSize),
+			grpc.MaxCallSendMsgSize(maxMessageSize),
+		),
+	}
+	
+	conn, err := grpc.Dial(addr, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("连接Data Service失败: %v", err)
 	}

@@ -139,6 +139,28 @@ func (te *TestExecutor) readDataAsArrow(ctx context.Context) ([]byte, error) {
 	builder := array.NewRecordBuilder(pool, schema)
 	defer builder.Release()
 
+	// 获取每个字段的长度限制
+	fieldLengths := make([]int, len(cols))
+	for i, colType := range colTypes {
+		length, ok := colType.Length()
+		if ok && length > 0 {
+			fieldLengths[i] = int(length)
+		} else {
+			// 如果没有长度限制，使用默认值（根据模板中的 max_field_size）
+			// 对于 TEXT 类型，MySQL 可能没有返回长度，但我们仍然需要限制
+			typeName := colType.DatabaseTypeName()
+			if typeName == "TEXT" || typeName == "MEDIUMTEXT" || typeName == "LONGTEXT" {
+				fieldLengths[i] = 1024 // 模板中的 max_field_size 限制
+			} else {
+				fieldLengths[i] = 1024 // 默认最大长度
+			}
+		}
+		// 确保不超过 1024（模板中的 max_field_size 限制）
+		if fieldLengths[i] > 1024 {
+			fieldLengths[i] = 1024
+		}
+	}
+
 	// 读取数据并填充到Arrow Builder
 	values := make([]interface{}, len(cols))
 	valuePtrs := make([]interface{}, len(cols))
@@ -154,7 +176,7 @@ func (te *TestExecutor) readDataAsArrow(ctx context.Context) ([]byte, error) {
 
 		// 将值添加到Arrow Builder
 		for i, val := range values {
-			if err := appendValueToArrowBuilder(builder.Field(i), val); err != nil {
+			if err := appendValueToArrowBuilderWithLength(builder.Field(i), val, fieldLengths[i]); err != nil {
 				return nil, fmt.Errorf("添加值到Arrow Builder失败: %w", err)
 			}
 		}
@@ -212,8 +234,16 @@ func sqlTypeToArrowType(colType *sql.ColumnType) (arrow.DataType, error) {
 	}
 }
 
+// appendValueToArrowBuilderWithLength 将值添加到Arrow Builder（带长度限制）
+func appendValueToArrowBuilderWithLength(builder array.Builder, val interface{}, maxLength int) error {
+	if maxLength <= 0 {
+		maxLength = 1024 // 默认最大长度
+	}
+	return appendValueToArrowBuilder(builder, val, maxLength)
+}
+
 // appendValueToArrowBuilder 将值添加到Arrow Builder
-func appendValueToArrowBuilder(builder array.Builder, val interface{}) error {
+func appendValueToArrowBuilder(builder array.Builder, val interface{}, maxLength int) error {
 	if val == nil {
 		builder.AppendNull()
 		return nil
@@ -276,11 +306,23 @@ func appendValueToArrowBuilder(builder array.Builder, val interface{}) error {
 	case *array.StringBuilder:
 		switch v := val.(type) {
 		case string:
+			// 确保字符串长度不超过字段定义的长度限制
+			if len(v) > maxLength {
+				v = v[:maxLength]
+			}
 			b.Append(v)
 		case []byte:
-			b.Append(string(v))
+			str := string(v)
+			if len(str) > maxLength {
+				str = str[:maxLength]
+			}
+			b.Append(str)
 		default:
-			b.Append(fmt.Sprintf("%v", val))
+			str := fmt.Sprintf("%v", val)
+			if len(str) > maxLength {
+				str = str[:maxLength]
+			}
+			b.Append(str)
 		}
 	case *array.BinaryBuilder:
 		switch v := val.(type) {

@@ -208,9 +208,15 @@ func (g *DataGenerator) generateValue(field FieldType, rowID int64) interface{} 
 		if size > 1024 {
 			size = 1024
 		}
+		// 如果模板指定了maxFieldSize，也要考虑这个限制
+		// 但这里 field.MaxSize 已经包含了这个信息
+		
 		// 生成随机字符串，大小可变（1到size字节），但不超过字段定义的长度
-		// 使用size而不是size+1，确保不超过限制
+		// 对于 CHAR 类型，MySQL 会填充空格，但输入数据不能超过定义长度
+		// 对于 VARCHAR 类型，输入数据不能超过定义长度
+		// 为了安全，生成的数据长度应该严格小于等于字段定义的长度
 		actualSize := mathrand.Intn(size) + 1
+		// 确保不超过限制（使用 <= 而不是 <）
 		if actualSize > size {
 			actualSize = size
 		}
@@ -218,11 +224,26 @@ func (g *DataGenerator) generateValue(field FieldType, rowID int64) interface{} 
 		if actualSize < 1 {
 			actualSize = 1
 		}
-		return g.generateRandomString(actualSize)
+		// 生成字符串并确保字节长度不超过 actualSize
+		result := g.generateRandomString(actualSize)
+		// 如果由于某种原因长度超限，截断到指定字节数
+		if len(result) > size {
+			result = result[:size]
+		}
+		return result
 	}
 	if strings.Contains(sqlType, "TEXT") || strings.Contains(sqlType, "CLOB") {
-		// TEXT类型，最大1024字节
-		size := mathrand.Intn(1024) + 1
+		// TEXT类型，最大1024字节（根据模板限制）
+		// 但需要确保不超过字段的实际限制
+		maxSize := 1024
+		if field.MaxSize > 0 && field.MaxSize < maxSize {
+			maxSize = field.MaxSize
+		}
+		size := mathrand.Intn(maxSize) + 1
+		// 确保不超过限制
+		if size > maxSize {
+			size = maxSize
+		}
 		return g.generateRandomString(size)
 	}
 
@@ -243,14 +264,29 @@ func (g *DataGenerator) generateValue(field FieldType, rowID int64) interface{} 
 	return fmt.Sprintf("value_%d", rowID)
 }
 
-// generateRandomString 生成随机字符串
+// generateRandomString 生成随机字符串（确保字节长度不超过指定大小）
 func (g *DataGenerator) generateRandomString(size int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	// 确保 size 是有效的
+	if size <= 0 {
+		size = 1
+	}
+	if size > 1024 {
+		size = 1024 // 最大限制
+	}
+	
 	b := make([]byte, size)
 	for i := range b {
 		b[i] = charset[mathrand.Intn(len(charset))]
 	}
-	return string(b)
+	
+	// 确保返回的字符串字节长度不超过 size
+	result := string(b)
+	if len(result) > size {
+		// 如果由于UTF-8编码导致长度超限，截断到指定字节数
+		result = result[:size]
+	}
+	return result
 }
 
 // generateRandomBytes 生成随机字节
